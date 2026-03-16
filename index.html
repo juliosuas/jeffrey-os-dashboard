@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JEFFREY OS v4.6 // COMMAND CENTER</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   JEFFREY OS — HACKER COMMAND CENTER DASHBOARD
+   Single-file, self-contained, no build tools
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+:root {
+  --green: #00ff41;
+  --green-dim: #00aa2a;
+  --green-bg: rgba(0,255,65,0.03);
+  --green-glow: rgba(0,255,65,0.15);
+  --cyan: #00d4ff;
+  --cyan-dim: #0088aa;
+  --red: #ff3333;
+  --red-glow: rgba(255,50,50,0.3);
+  --orange: #ffa500;
+  --yellow: #ffee00;
+  --purple: #bf5fff;
+  --bg: #0a0a0f;
+  --bg-panel: rgba(5,15,5,0.85);
+  --border: #1a3a1a;
+  --border-bright: #00ff41;
+  --text-dim: #445544;
+  --text-muted: #667766;
+  --font-mono: 'Share Tech Mono', 'Courier New', monospace;
+  --font-display: 'Orbitron', 'Share Tech Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--bg);
+  color: var(--green);
+  font-family: var(--font-mono);
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── BOOT SEQUENCE OVERLAY ── */
+#boot-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #000;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.8s ease;
+}
+#boot-overlay.fade-out { opacity: 0; pointer-events: none; }
+#boot-text {
+  font-family: var(--font-mono);
+  font-size: 14px; color: var(--green);
+  text-align: left; width: 600px; max-width: 90vw;
+  text-shadow: 0 0 8px var(--green);
+  line-height: 1.6;
+  white-space: pre;
+}
+#boot-logo {
+  font-family: var(--font-display);
+  font-size: 48px; font-weight: 900;
+  color: var(--green);
+  text-shadow: 0 0 30px var(--green), 0 0 60px var(--green-glow);
+  letter-spacing: 12px;
+  margin-bottom: 40px;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+#boot-logo.visible { opacity: 1; }
+#boot-progress {
+  width: 400px; max-width: 80vw; height: 3px;
+  background: #111; margin-top: 30px;
+  border: 1px solid #222;
+}
+#boot-progress-fill {
+  height: 100%; width: 0%;
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+  transition: width 0.3s ease;
+}
+
+/* ── SCANLINES ── */
+.scanlines {
+  position: fixed; inset: 0; z-index: 1000; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,255,65,0.015) 2px, rgba(0,255,65,0.015) 4px
+  );
+}
+.scanlines::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(transparent 50%, rgba(0,0,0,0.05) 50%);
+  background-size: 100% 4px;
+  animation: scanMove 8s linear infinite;
+}
+@keyframes scanMove {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(8px); }
+}
+
+/* ── CRT FLICKER ── */
+.crt-flicker {
+  position: fixed; inset: 0; z-index: 999; pointer-events: none;
+  animation: crtFlicker 0.15s infinite;
+  opacity: 0;
+}
+@keyframes crtFlicker {
+  0% { opacity: 0; background: rgba(0,255,65,0.01); }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ── MATRIX RAIN ── */
+#matrix-canvas {
+  position: fixed; inset: 0; z-index: 0;
+  opacity: 0.07;
+}
+
+/* ── MAIN LAYOUT ── */
+.dashboard {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  height: 100vh; padding: 8px;
+  gap: 8px; opacity: 0;
+  transition: opacity 1s ease;
+}
+.dashboard.visible { opacity: 1; }
+
+/* ── HEADER ── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 100%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  animation: headerGlow 3s ease-in-out infinite;
+}
+@keyframes headerGlow {
+  0%, 100% { opacity: 0.3; } 50% { opacity: 1; }
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo {
+  font-family: var(--font-display);
+  font-size: 1.8em; font-weight: 900;
+  letter-spacing: 6px;
+  text-shadow: 0 0 15px var(--green), 0 0 30px var(--green-glow);
+  animation: logoFlicker 4s infinite;
+}
+@keyframes logoFlicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; } 93% { opacity: 0.7; } 94% { opacity: 1; }
+  96% { opacity: 0.8; } 97% { opacity: 1; }
+}
+.header-subtitle {
+  font-size: 0.7em; color: var(--cyan);
+  text-shadow: 0 0 5px var(--cyan);
+  letter-spacing: 2px;
+}
+.header-center {
+  display: flex; gap: 20px; align-items: center; font-size: 0.75em;
+}
+.header-center .live-dot {
+  display: inline-block; width: 8px; height: 8px;
+  background: var(--red); border-radius: 50%;
+  animation: blink 1s infinite;
+  box-shadow: 0 0 8px var(--red);
+}
+.header-right { text-align: right; }
+.clock-display {
+  font-family: var(--font-display);
+  font-size: 1.4em; font-weight: 700;
+  color: var(--cyan);
+  text-shadow: 0 0 10px var(--cyan);
+  letter-spacing: 3px;
+}
+.date-display {
+  font-size: 0.7em; color: var(--text-muted);
+  letter-spacing: 2px;
+}
+
+/* ── GRID LAYOUT ── */
+.grid {
+  flex: 1; display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 8px; overflow: hidden;
+  min-height: 0;
+}
+
+/* ── PANEL BASE ── */
+.panel {
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  padding: 10px;
+  position: relative;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.panel::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
+  opacity: 0.3;
+}
+.panel:hover { border-color: var(--green-dim); }
+.panel:hover::before { opacity: 0.8; }
+
+.panel-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px; padding-bottom: 6px;
+  border-bottom: 1px solid rgba(0,255,65,0.1);
+  flex-shrink: 0;
+}
+.panel-title {
+  font-size: 0.7em; color: var(--cyan);
+  text-shadow: 0 0 5px var(--cyan-dim);
+  letter-spacing: 2px; font-weight: bold;
+}
+.panel-badge {
+  font-size: 0.6em; padding: 1px 6px;
+  border: 1px solid; border-radius: 2px;
+}
+.badge-ok { color: var(--green); border-color: var(--green-dim); }
+.badge-warn { color: var(--orange); border-color: var(--orange); }
+.badge-live { color: var(--red); border-color: var(--red); animation: blink 1.5s infinite; }
+
+.panel-body { flex: 1; overflow: hidden; min-height: 0; }
+
+/* ── SYSTEM METRICS ── */
+.metrics-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 6px; height: 100%;
+}
+.metric-card {
+  padding: 6px 8px;
+  border: 1px solid #111;
+  background: rgba(0,0,0,0.4);
+  display: flex; flex-direction: column;
+  justify-content: center;
+}
+.metric-label {
+  font-size: 0.6em; color: var(--text-muted);
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.metric-value {
+  font-family: var(--font-display);
+  font-size: 1.5em; font-weight: 700;
+  text-shadow: 0 0 8px var(--green);
+  margin: 2px 0;
+}
+.metric-value.warn { color: var(--orange); text-shadow: 0 0 8px var(--orange); }
+.metric-value.crit { color: var(--red); text-shadow: 0 0 8px var(--red); }
+.metric-bar {
+  height: 3px; background: #111;
+  border-radius: 2px; overflow: hidden;
+}
+.metric-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green-glow);
+  transition: width 2s ease;
+}
+.metric-fill.warn { background: var(--orange); box-shadow: 0 0 6px rgba(255,165,0,0.3); }
+.metric-fill.crit { background: var(--red); box-shadow: 0 0 6px var(--red-glow); }
+
+/* ── CHANNEL STATUS ── */
+.channel-list { display: flex; flex-direction: column; gap: 4px; }
+.channel-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 8px;
+  border: 1px solid #111;
+  background: rgba(0,0,0,0.3);
+  font-size: 0.8em;
+}
+.channel-left { display: flex; align-items: center; gap: 8px; }
+.channel-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-online {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulseDot 2s infinite;
+}
+.dot-standby {
+  background: var(--orange);
+  box-shadow: 0 0 6px var(--orange);
+  animation: pulseDot 3s infinite;
+}
+.dot-offline {
+  background: var(--red);
+  box-shadow: 0 0 4px var(--red);
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+.channel-name { color: #ccc; }
+.channel-status-text { font-size: 0.85em; }
+
+/* ── SESSIONS ── */
+.sessions-list {
+  display: flex; flex-direction: column; gap: 3px;
+  overflow-y: auto; max-height: 100%;
+  scrollbar-width: thin; scrollbar-color: var(--green-dim) transparent;
+}
+.session-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 6px; font-size: 0.75em;
+  border-bottom: 1px solid #0a0a0a;
+}
+.session-id { color: var(--cyan); max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-model { color: var(--green); font-size: 0.9em; }
+.session-age { color: var(--text-dim); }
+.sessions-footer {
+  margin-top: auto; padding-top: 6px;
+  border-top: 1px solid #111;
+  font-size: 0.65em; color: var(--text-dim);
+}
+
+/* ── TERMINAL LOG ── */
+.terminal-output {
+  font-size: 0.72em; line-height: 1.5;
+  overflow-y: auto; height: 100%;
+  scrollbar-width: thin; scrollbar-color: var(--green-dim) transparent;
+}
+.terminal-output .line {
+  white-space: nowrap; opacity: 0;
+  animation: fadeIn 0.15s forwards;
+}
+.t-prompt { color: var(--yellow); }
+.t-error { color: var(--red); }
+.t-success { color: var(--green); }
+.t-info { color: var(--cyan); }
+.t-warn { color: var(--orange); }
+.t-dim { color: var(--text-dim); }
+
+/* ── WEATHER ── */
+.weather-display { text-align: center; padding: 8px 0; }
+.weather-temp {
+  font-family: var(--font-display);
+  font-size: 2.8em; font-weight: 900;
+  text-shadow: 0 0 15px var(--cyan);
+  color: var(--cyan);
+  line-height: 1;
+}
+.weather-desc {
+  font-size: 0.85em; color: var(--text-muted);
+  margin: 4px 0;
+}
+.weather-details {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px; font-size: 0.7em; margin-top: 8px;
+}
+.weather-detail {
+  padding: 4px; border: 1px solid #111;
+  background: rgba(0,0,0,0.3);
+}
+.weather-detail-label { color: var(--text-dim); font-size: 0.85em; }
+.weather-detail-value { color: var(--green); }
+
+/* ── QUICK ACTIONS ── */
+.actions-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 6px; height: 100%;
+}
+.action-btn {
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.5);
+  color: var(--green);
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px;
+  transition: all 0.2s;
+  text-align: center;
+  padding: 6px;
+}
+.action-btn:hover {
+  border-color: var(--green);
+  background: rgba(0,255,65,0.05);
+  text-shadow: 0 0 8px var(--green);
+  box-shadow: 0 0 15px rgba(0,255,65,0.1);
+}
+.action-btn:active {
+  background: rgba(0,255,65,0.15);
+  transform: scale(0.97);
+}
+.action-icon { font-size: 1.6em; }
+.action-label { letter-spacing: 1px; }
+
+/* ── REMINDERS ── */
+.reminders-list {
+  display: flex; flex-direction: column; gap: 6px;
+  overflow-y: auto; max-height: 100%;
+  scrollbar-width: thin;
+}
+.reminder-item {
+  padding: 6px 8px;
+  border-left: 2px solid var(--green);
+  background: rgba(0,0,0,0.3);
+  font-size: 0.75em;
+}
+.reminder-item.urgent { border-left-color: var(--red); }
+.reminder-item.warning { border-left-color: var(--orange); }
+.reminder-priority {
+  font-size: 0.8em; font-weight: bold;
+  margin-bottom: 2px;
+}
+.reminder-text { color: #ccc; }
+.reminder-meta { color: var(--text-dim); font-size: 0.85em; margin-top: 2px; }
+
+/* ── NETWORK STATUS ── */
+.network-nodes {
+  display: flex; flex-direction: column; gap: 5px;
+}
+.net-node {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 8px;
+  border: 1px solid #111;
+  background: rgba(0,0,0,0.3);
+  font-size: 0.75em;
+}
+.net-node-left { display: flex; align-items: center; gap: 8px; }
+.net-node-name { color: var(--cyan); }
+.net-node-detail { color: var(--text-dim); font-size: 0.9em; }
+.net-latency { color: var(--green); }
+.net-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px; margin-top: 8px; font-size: 0.7em;
+}
+.net-stat {
+  padding: 4px 6px; border: 1px solid #111;
+  background: rgba(0,0,0,0.3);
+}
+.net-stat-label { color: var(--text-dim); }
+.net-stat-value { color: var(--green); }
+
+/* ── UPTIME COUNTER ── */
+.uptime-display { text-align: center; padding: 6px 0; }
+.uptime-big {
+  font-family: var(--font-display);
+  font-size: 1.1em; font-weight: 700;
+  color: var(--green);
+  text-shadow: 0 0 10px var(--green-glow);
+  letter-spacing: 2px;
+}
+.uptime-label { font-size: 0.65em; color: var(--text-dim); margin-top: 2px; letter-spacing: 2px; }
+.uptime-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 4px; margin-top: 8px;
+}
+.uptime-unit { text-align: center; padding: 4px; border: 1px solid #111; background: rgba(0,0,0,0.3); }
+.uptime-num {
+  font-family: var(--font-display);
+  font-size: 1.5em; font-weight: 700;
+  color: var(--cyan); text-shadow: 0 0 8px var(--cyan-dim);
+}
+.uptime-unit-label { font-size: 0.55em; color: var(--text-dim); letter-spacing: 1px; }
+
+/* ── BOTTOM BAR ── */
+.bottom-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  font-size: 0.68em;
+  flex-shrink: 0;
+}
+.bottom-bar .segment { display: flex; align-items: center; gap: 6px; }
+.bottom-live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--red); animation: blink 1s infinite;
+  box-shadow: 0 0 6px var(--red);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto;
+  }
+}
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .header { flex-direction: column; gap: 8px; text-align: center; }
+  .header-center { flex-wrap: wrap; justify-content: center; }
+  .logo { font-size: 1.4em; }
+}
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+  .panel { min-height: 200px; }
+  .bottom-bar { flex-wrap: wrap; gap: 4px; justify-content: center; }
+}
+
+/* ── GLITCH EFFECT ── */
+.glitch { position: relative; }
+.glitch::before, .glitch::after {
+  content: attr(data-text);
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+.glitch::before {
+  animation: glitch1 3s infinite;
+  color: var(--cyan); z-index: -1;
+}
+.glitch::after {
+  animation: glitch2 3s infinite;
+  color: var(--red); z-index: -2;
+}
+@keyframes glitch1 {
+  0%, 95% { clip-path: inset(0); transform: translate(0); }
+  96% { clip-path: inset(20% 0 60% 0); transform: translate(-3px, 0); }
+  97% { clip-path: inset(50% 0 10% 0); transform: translate(3px, 0); }
+  98% { clip-path: inset(0); transform: translate(0); }
+}
+@keyframes glitch2 {
+  0%, 94% { clip-path: inset(0); transform: translate(0); }
+  95% { clip-path: inset(40% 0 20% 0); transform: translate(3px, 0); }
+  96% { clip-path: inset(10% 0 70% 0); transform: translate(-3px, 0); }
+  97% { clip-path: inset(0); transform: translate(0); }
+}
+
+/* ── UTILITY ── */
+@keyframes fadeIn { to { opacity: 1; } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes pulse {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.6; }
+}
+
+.text-green { color: var(--green); }
+.text-cyan { color: var(--cyan); }
+.text-red { color: var(--red); }
+.text-orange { color: var(--orange); }
+.text-dim { color: var(--text-dim); }
+
+/* Span across grid */
+.span-col-2 { grid-column: span 2; }
+</style>
+</head>
+<body>
+
+<!-- ═══ BOOT SEQUENCE ═══ -->
+<div id="boot-overlay">
+  <div id="boot-logo">JEFFREY OS</div>
+  <div id="boot-text"></div>
+  <div id="boot-progress"><div id="boot-progress-fill"></div></div>
+</div>
+
+<!-- ═══ VISUAL EFFECTS ═══ -->
+<div class="scanlines"></div>
+<div class="crt-flicker"></div>
+<canvas id="matrix-canvas"></canvas>
+
+<!-- ═══ MAIN DASHBOARD ═══ -->
+<div class="dashboard" id="dashboard">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo glitch" data-text="JEFFREY OS">JEFFREY OS</div>
+      <div class="header-subtitle">OPUS 4.6 · MAC MINI M4 · COMMAND CENTER</div>
+    </div>
+    <div class="header-center">
+      <span><span class="live-dot"></span> LIVE</span>
+      <span>HOST: <span class="text-cyan">MAGIs-Mac-mini</span></span>
+      <span>TZ: <span class="text-cyan">America/Mexico_City</span></span>
+      <span>UPTIME: <span class="text-green" id="header-uptime">--</span></span>
+    </div>
+    <div class="header-right">
+      <div class="clock-display" id="clock-time">--:--:--</div>
+      <div class="date-display" id="clock-date">----/--/--</div>
+    </div>
+  </div>
+
+  <!-- GRID -->
+  <div class="grid">
+
+    <!-- 1. SYSTEM METRICS -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">SYSTEM METRICS</span>
+        <span class="panel-badge badge-ok" id="metrics-badge">NOMINAL</span>
+      </div>
+      <div class="panel-body">
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">CPU LOAD</div>
+            <div class="metric-value" id="cpu-val">--%</div>
+            <div class="metric-bar"><div class="metric-fill" id="cpu-bar" style="width:0%"></div></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">MEMORY</div>
+            <div class="metric-value" id="mem-val">--%</div>
+            <div class="metric-bar"><div class="metric-fill" id="mem-bar" style="width:0%"></div></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">DISK USAGE</div>
+            <div class="metric-value" id="disk-val">--%</div>
+            <div class="metric-bar"><div class="metric-fill" id="disk-bar" style="width:0%"></div></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">SWAP</div>
+            <div class="metric-value" id="swap-val">--%</div>
+            <div class="metric-bar"><div class="metric-fill" id="swap-bar" style="width:0%"></div></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">AI CONTEXT</div>
+            <div class="metric-value" id="ctx-val">6%</div>
+            <div class="metric-bar"><div class="metric-fill" id="ctx-bar" style="width:6%"></div></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">CACHE HIT</div>
+            <div class="metric-value" style="color:var(--green)">99%</div>
+            <div class="metric-bar"><div class="metric-fill" style="width:99%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. CHANNEL STATUS -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">CHANNELS & COMMS</span>
+        <span class="panel-badge badge-ok" id="channels-badge">5 ACTIVE</span>
+      </div>
+      <div class="panel-body">
+        <div class="channel-list" id="channel-list">
+          <div class="channel-row">
+            <div class="channel-left">
+              <div class="channel-dot dot-online"></div>
+              <span class="channel-name">WhatsApp</span>
+            </div>
+            <span class="channel-status-text text-green">LINKED</span>
+          </div>
+          <div class="channel-row">
+            <div class="channel-left">
+              <div class="channel-dot dot-online"></div>
+              <span class="channel-name">iMessage</span>
+            </div>
+            <span class="channel-status-text text-green">ACTIVE</span>
+          </div>
+          <div class="channel-row">
+            <div class="channel-left">
+              <div class="channel-dot dot-standby"></div>
+              <span class="channel-name">Telegram</span>
+            </div>
+            <span class="channel-status-text text-orange">STANDBY</span>
+          </div>
+          <div class="channel-row">
+            <div class="channel-left">
+              <div class="channel-dot dot-online"></div>
+              <span class="channel-name">Voice (Twilio)</span>
+            </div>
+            <span class="channel-status-text text-green">READY</span>
+          </div>
+          <div class="channel-row">
+            <div class="channel-left">
+              <div class="channel-dot dot-online"></div>
+              <span class="channel-name">TTS (ElevenLabs)</span>
+            </div>
+            <span class="channel-status-text text-green">ONLINE</span>
+          </div>
+          <div class="channel-row">
+            <div class="channel-left">
+              <div class="channel-dot dot-online"></div>
+              <span class="channel-name">Webchat</span>
+            </div>
+            <span class="channel-status-text text-green">LOCAL</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. WEATHER (MEXICO CITY) -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">WEATHER · CDMX</span>
+        <span class="panel-badge badge-ok" id="weather-badge">LIVE</span>
+      </div>
+      <div class="panel-body">
+        <div class="weather-display" id="weather-display">
+          <div class="weather-temp" id="weather-temp">--°</div>
+          <div class="weather-desc" id="weather-desc">Loading...</div>
+          <div class="weather-details" id="weather-details">
+            <div class="weather-detail">
+              <div class="weather-detail-label">FEELS LIKE</div>
+              <div class="weather-detail-value" id="weather-feels">--°</div>
+            </div>
+            <div class="weather-detail">
+              <div class="weather-detail-label">HUMIDITY</div>
+              <div class="weather-detail-value" id="weather-humidity">--%</div>
+            </div>
+            <div class="weather-detail">
+              <div class="weather-detail-label">WIND</div>
+              <div class="weather-detail-value" id="weather-wind">-- km/h</div>
+            </div>
+            <div class="weather-detail">
+              <div class="weather-detail-label">VISIBILITY</div>
+              <div class="weather-detail-value" id="weather-vis">-- km</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. UPTIME & SYSTEM INFO -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">UPTIME & STATUS</span>
+        <span class="panel-badge badge-ok">ONLINE</span>
+      </div>
+      <div class="panel-body">
+        <div class="uptime-display">
+          <div class="uptime-big" id="uptime-counter">00d 00h 00m 00s</div>
+          <div class="uptime-label">SYSTEM UPTIME</div>
+          <div class="uptime-grid">
+            <div class="uptime-unit">
+              <div class="uptime-num" id="up-days">00</div>
+              <div class="uptime-unit-label">DAYS</div>
+            </div>
+            <div class="uptime-unit">
+              <div class="uptime-num" id="up-hours">00</div>
+              <div class="uptime-unit-label">HOURS</div>
+            </div>
+            <div class="uptime-unit">
+              <div class="uptime-num" id="up-mins">00</div>
+              <div class="uptime-unit-label">MINS</div>
+            </div>
+            <div class="uptime-unit">
+              <div class="uptime-num" id="up-secs">00</div>
+              <div class="uptime-unit-label">SECS</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:10px; font-size:0.7em; color:var(--text-dim); border-top:1px solid #111; padding-top:6px;">
+          <div>OS: <span class="text-green">macOS 15.7.4</span></div>
+          <div>CHIP: <span class="text-green">Apple M4</span></div>
+          <div>RAM: <span class="text-green">16 GB</span></div>
+          <div>KERNEL: <span class="text-green" id="kernel-ver">Darwin</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. LIVE TERMINAL (span 2 cols) -->
+    <div class="panel span-col-2">
+      <div class="panel-header">
+        <span class="panel-title">LIVE TERMINAL</span>
+        <span class="panel-badge badge-live">REC</span>
+      </div>
+      <div class="panel-body">
+        <div class="terminal-output" id="terminal"></div>
+      </div>
+    </div>
+
+    <!-- 6. ACTIVE SESSIONS -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">ACTIVE SESSIONS</span>
+        <span class="panel-badge badge-ok" id="session-count">-- OPEN</span>
+      </div>
+      <div class="panel-body">
+        <div class="sessions-list" id="sessions-list"></div>
+        <div class="sessions-footer" id="sessions-footer">
+          DEFAULT MODEL: opus-4.6 (1M ctx)
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. NETWORK STATUS -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">NETWORK</span>
+        <span class="panel-badge badge-ok" id="net-badge">CONNECTED</span>
+      </div>
+      <div class="panel-body">
+        <div class="network-nodes" id="network-nodes">
+          <div class="net-node">
+            <div class="net-node-left">
+              <div class="channel-dot dot-online"></div>
+              <div>
+                <div class="net-node-name">MAC-MINI-M4</div>
+                <div class="net-node-detail">Primary · 192.168.1.x</div>
+              </div>
+            </div>
+            <span class="net-latency" id="net-latency-local">&lt;1ms</span>
+          </div>
+          <div class="net-node">
+            <div class="net-node-left">
+              <div class="channel-dot dot-online"></div>
+              <div>
+                <div class="net-node-name">GATEWAY</div>
+                <div class="net-node-detail">Port 4000 · OpenClaw</div>
+              </div>
+            </div>
+            <span class="net-latency" id="net-latency-gw">--ms</span>
+          </div>
+          <div class="net-node">
+            <div class="net-node-left">
+              <div class="channel-dot dot-standby"></div>
+              <div>
+                <div class="net-node-name">EVA-02</div>
+                <div class="net-node-detail">i9 + RTX 4090 · WOL</div>
+              </div>
+            </div>
+            <span class="text-orange">STANDBY</span>
+          </div>
+        </div>
+        <div class="net-stats" id="net-stats">
+          <div class="net-stat">
+            <div class="net-stat-label">DOWNLOAD</div>
+            <div class="net-stat-value" id="net-down">-- Mbps</div>
+          </div>
+          <div class="net-stat">
+            <div class="net-stat-label">UPLOAD</div>
+            <div class="net-stat-value" id="net-up">-- Mbps</div>
+          </div>
+          <div class="net-stat">
+            <div class="net-stat-label">ONLINE</div>
+            <div class="net-stat-value text-green" id="net-online">YES</div>
+          </div>
+          <div class="net-stat">
+            <div class="net-stat-label">TYPE</div>
+            <div class="net-stat-value" id="net-type">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. QUICK ACTIONS -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">QUICK ACTIONS</span>
+        <span class="panel-badge badge-ok">READY</span>
+      </div>
+      <div class="panel-body">
+        <div class="actions-grid">
+          <button class="action-btn" onclick="triggerAction('wake-eva02')">
+            <span class="action-icon">⚡</span>
+            <span class="action-label">WAKE EVA-02</span>
+          </button>
+          <button class="action-btn" onclick="triggerAction('system-check')">
+            <span class="action-icon">🔍</span>
+            <span class="action-label">SYS CHECK</span>
+          </button>
+          <button class="action-btn" onclick="triggerAction('clear-cache')">
+            <span class="action-icon">🗑</span>
+            <span class="action-label">CLEAR CACHE</span>
+          </button>
+          <button class="action-btn" onclick="triggerAction('restart-gw')">
+            <span class="action-icon">🔄</span>
+            <span class="action-label">RESTART GW</span>
+          </button>
+          <button class="action-btn" onclick="triggerAction('backup')">
+            <span class="action-icon">💾</span>
+            <span class="action-label">BACKUP</span>
+          </button>
+          <button class="action-btn" onclick="triggerAction('code-red')">
+            <span class="action-icon" style="color:var(--red)">🚨</span>
+            <span class="action-label" style="color:var(--red)">CODE RED</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. REMINDERS & ALERTS -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">REMINDERS & ALERTS</span>
+        <span class="panel-badge badge-warn" id="reminder-badge">1 URGENT</span>
+      </div>
+      <div class="panel-body">
+        <div class="reminders-list" id="reminders-list">
+          <div class="reminder-item urgent">
+            <div class="reminder-priority text-red">CRITICAL</div>
+            <div class="reminder-text">Palacio de Hierro: $1,915 MXN</div>
+            <div class="reminder-meta" id="palacio-countdown">Due: March 20</div>
+          </div>
+          <div class="reminder-item warning">
+            <div class="reminder-priority text-orange">SECURITY</div>
+            <div class="reminder-text">DM Policy: JULIO ONLY</div>
+            <div class="reminder-meta">Dan HD: ACCESS REVOKED</div>
+          </div>
+          <div class="reminder-item">
+            <div class="reminder-priority text-green">COMPLETE</div>
+            <div class="reminder-text">EVA-02 i9 installed</div>
+            <div class="reminder-meta">WhatsApp re-linked · iMessage configured</div>
+          </div>
+          <div class="reminder-item">
+            <div class="reminder-priority text-cyan">INFO</div>
+            <div class="reminder-text">OpenClaw v2026.3.13 deployed</div>
+            <div class="reminder-meta">play-anime.sh fixed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. INFRASTRUCTURE -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">INFRASTRUCTURE</span>
+        <span class="panel-badge badge-ok">3 NODES</span>
+      </div>
+      <div class="panel-body">
+        <div class="network-nodes">
+          <div class="net-node" style="flex-direction:column; align-items:stretch;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+              <span class="net-node-name">MAC MINI M4</span>
+              <span class="text-green" style="font-size:0.85em;">● ONLINE</span>
+            </div>
+            <div class="net-node-detail">Apple M4 · 16GB · macOS 15.7.4</div>
+            <div class="net-node-detail">228GB SSD · Gateway Port 4000</div>
+          </div>
+          <div class="net-node" style="flex-direction:column; align-items:stretch;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+              <span class="net-node-name">EVA-02</span>
+              <span class="text-orange" style="font-size:0.85em;">● STANDBY</span>
+            </div>
+            <div class="net-node-detail">i9-14900K · RTX 4090 · 48GB DDR5</div>
+            <div class="net-node-detail">ROG Evangelion · WOL Ready</div>
+          </div>
+          <div class="net-node" style="flex-direction:column; align-items:stretch;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+              <span class="net-node-name">iPHONE 17 PRO</span>
+              <span class="text-green" style="font-size:0.85em;">● LINKED</span>
+            </div>
+            <div class="net-node-detail">iMessage bridge · WhatsApp host</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <div class="segment">
+      <div class="bottom-live-dot"></div>
+      <span>JEFFREY OS v4.6 · OpenClaw 2026.3.13</span>
+    </div>
+    <div class="segment">
+      <span>MODEL: CLAUDE-OPUS-4.6 · CTX: 1,000,000 · CACHE: 99%</span>
+    </div>
+    <div class="segment">
+      <span>REFRESH: <span id="refresh-countdown">30</span>s</span>
+    </div>
+    <div class="segment">
+      <span id="bottom-clock">--:--:--</span>
+    </div>
+  </div>
+
+</div><!-- /dashboard -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   JEFFREY OS — DASHBOARD ENGINE
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── BOOT SEQUENCE ──
+const bootLines = [
+  '[BIOS] POST check .................. OK',
+  '[BIOS] Memory test: 16384 MB ....... OK',
+  '[BOOT] Loading kernel: Darwin 24.6.0',
+  '[BOOT] Mounting filesystems ........ OK',
+  '[BOOT] Initializing network stack',
+  '[BOOT] Loading jeffrey_os v4.6',
+  '',
+  '[CORE] Neural engine: claude-opus-4.6',
+  '[CORE] Context window: 1,000,000 tokens',
+  '[CORE] Loading memory system ........ 5 files',
+  '',
+  '[CHAN] WhatsApp gateway ............ LINKED',
+  '[CHAN] iMessage gateway ............ ACTIVE',
+  '[CHAN] Telegram .................... STANDBY',
+  '[CHAN] Voice (Twilio) .............. READY',
+  '[CHAN] TTS (ElevenLabs) ............ ONLINE',
+  '',
+  '[SEC] DM Policy: JULIO ONLY',
+  '[SEC] Perimeter scan .............. CLEAR',
+  '[SEC] Threat level ................ LOW',
+  '',
+  '[HW] Mac mini M4 .................. ONLINE',
+  '[HW] EVA-02 (i9+4090) ............ STANDBY',
+  '[HW] iPhone 17 Pro ................ LINKED',
+  '',
+  '[NET] Network status .............. CONNECTED',
+  '[NET] Gateway port 4000 ........... OK',
+  '',
+  '══════════════════════════════════════════',
+  '  JEFFREY OS v4.6 — ALL SYSTEMS ONLINE',
+  '  "Consider it done, because I did it."',
+  '══════════════════════════════════════════',
+];
+
+async function runBootSequence() {
+  const overlay = document.getElementById('boot-overlay');
+  const logo = document.getElementById('boot-logo');
+  const textEl = document.getElementById('boot-text');
+  const progressFill = document.getElementById('boot-progress-fill');
+
+  // Show logo first
+  await sleep(300);
+  logo.classList.add('visible');
+  await sleep(1200);
+
+  // Type out boot lines
+  let displayText = '';
+  for (let i = 0; i < bootLines.length; i++) {
+    displayText += bootLines[i] + '\n';
+    // Keep only last ~18 lines visible
+    const lines = displayText.split('\n');
+    if (lines.length > 18) {
+      displayText = lines.slice(-18).join('\n');
+    }
+    textEl.textContent = displayText;
+    progressFill.style.width = ((i + 1) / bootLines.length * 100) + '%';
+    await sleep(60 + Math.random() * 40);
+  }
+
+  await sleep(600);
+
+  // Fade out boot, show dashboard
+  overlay.classList.add('fade-out');
+  document.getElementById('dashboard').classList.add('visible');
+  await sleep(800);
+  overlay.style.display = 'none';
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── MATRIX RAIN ──
+function initMatrix() {
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const chars = 'ジェフリーABCDEF0123456789アイウエオカキクケコ░▒▓█';
+  const fontSize = 13;
+  const columns = Math.floor(canvas.width / fontSize);
+  const drops = Array(columns).fill(1);
+
+  function draw() {
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00ff41';
+    ctx.font = fontSize + 'px monospace';
+    for (let i = 0; i < drops.length; i++) {
+      const char = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+  setInterval(draw, 55);
+
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+}
+
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  const opts = { timeZone: 'America/Mexico_City', hour12: false };
+  const time = now.toLocaleTimeString('en-US', { ...opts, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const date = now.toLocaleDateString('en-US', { ...opts, year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
+
+  document.getElementById('clock-time').textContent = time;
+  document.getElementById('clock-date').textContent = date;
+  document.getElementById('bottom-clock').textContent = time + ' CST';
+}
+
+// ── UPTIME ──
+// Simulated boot time (configurable, defaults to ~10 days ago)
+const BOOT_TIME = new Date(Date.now() - (10 * 24 * 60 * 60 * 1000 + 14 * 60 * 60 * 1000 + 22 * 60 * 1000));
+
+function updateUptime() {
+  const diff = Date.now() - BOOT_TIME.getTime();
+  const secs = Math.floor(diff / 1000);
+  const mins = Math.floor(secs / 60);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+
+  const d = days;
+  const h = hours % 24;
+  const m = mins % 60;
+  const s = secs % 60;
+
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('uptime-counter').textContent = `${pad(d)}d ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+  document.getElementById('up-days').textContent = pad(d);
+  document.getElementById('up-hours').textContent = pad(h);
+  document.getElementById('up-mins').textContent = pad(m);
+  document.getElementById('up-secs').textContent = pad(s);
+  document.getElementById('header-uptime').textContent = `${d}d ${h}h ${m}m`;
+}
+
+// ── SYSTEM METRICS ──
+// Try real APIs, fallback to simulated
+let metrics = { cpu: 5, mem: 46, disk: 15, swap: 2 };
+
+function updateMetrics() {
+  // Simulate realistic fluctuations around baseline
+  metrics.cpu = Math.max(1, Math.min(100, metrics.cpu + (Math.random() - 0.5) * 8));
+  metrics.mem = Math.max(30, Math.min(85, 46 + (Math.random() - 0.5) * 12));
+  metrics.disk = 15 + Math.random() * 0.5;
+  metrics.swap = Math.max(0, 2 + (Math.random() - 0.5) * 3);
+
+  // Use navigator.deviceMemory if available
+  if (navigator.deviceMemory) {
+    // deviceMemory gives total RAM in GB
+    document.querySelector('#mem-val').title = `Total: ${navigator.deviceMemory}GB`;
+  }
+
+  setMetric('cpu', metrics.cpu);
+  setMetric('mem', metrics.mem);
+  setMetric('disk', metrics.disk);
+  setMetric('swap', metrics.swap);
+
+  // AI context simulation
+  const ctx = Math.max(5, 6 + Math.random() * 4);
+  document.getElementById('ctx-val').textContent = Math.floor(ctx) + '%';
+  document.getElementById('ctx-bar').style.width = ctx + '%';
+
+  // Update badge
+  const badge = document.getElementById('metrics-badge');
+  if (metrics.cpu > 80 || metrics.mem > 85) {
+    badge.textContent = 'WARNING';
+    badge.className = 'panel-badge badge-warn';
+  } else {
+    badge.textContent = 'NOMINAL';
+    badge.className = 'panel-badge badge-ok';
+  }
+}
+
+function setMetric(id, value) {
+  const val = Math.floor(value);
+  const el = document.getElementById(id + '-val');
+  const bar = document.getElementById(id + '-bar');
+  el.textContent = val + '%';
+  bar.style.width = val + '%';
+
+  // Color coding
+  el.className = 'metric-value' + (val > 80 ? ' crit' : val > 60 ? ' warn' : '');
+  bar.className = 'metric-fill' + (val > 80 ? ' crit' : val > 60 ? ' warn' : '');
+}
+
+// ── WEATHER (wttr.in) ──
+async function fetchWeather() {
+  try {
+    const resp = await fetch('https://wttr.in/Mexico+City?format=j1');
+    if (!resp.ok) throw new Error('Weather API error');
+    const data = await resp.json();
+    const current = data.current_condition[0];
+
+    document.getElementById('weather-temp').textContent = current.temp_C + '°C';
+    document.getElementById('weather-desc').textContent = current.weatherDesc[0].value.toUpperCase();
+    document.getElementById('weather-feels').textContent = current.FeelsLikeC + '°C';
+    document.getElementById('weather-humidity').textContent = current.humidity + '%';
+    document.getElementById('weather-wind').textContent = current.windspeedKmph + ' km/h';
+    document.getElementById('weather-vis').textContent = current.visibility + ' km';
+    document.getElementById('weather-badge').textContent = 'LIVE';
+    document.getElementById('weather-badge').className = 'panel-badge badge-ok';
+  } catch (e) {
+    // Fallback simulated data for CDMX
+    document.getElementById('weather-temp').textContent = '22°C';
+    document.getElementById('weather-desc').textContent = 'PARTLY CLOUDY';
+    document.getElementById('weather-feels').textContent = '21°C';
+    document.getElementById('weather-humidity').textContent = '45%';
+    document.getElementById('weather-wind').textContent = '12 km/h';
+    document.getElementById('weather-vis').textContent = '10 km';
+    document.getElementById('weather-badge').textContent = 'CACHED';
+    document.getElementById('weather-badge').className = 'panel-badge badge-warn';
+  }
+}
+
+// ── SESSIONS ──
+const defaultSessions = [
+  { id: 'agent:main:main', model: 'opus-4.6', age: 'now' },
+  { id: 'wa:group:12036…', model: 'sonnet-4.6', age: '2h' },
+  { id: 'wa:group:12036…', model: 'sonnet-4.6', age: '6h' },
+  { id: 'wa:dm:julio', model: 'opus-4.6', age: '1d' },
+  { id: 'imsg:bridge:main', model: 'sonnet-4.6', age: '2d' },
+  { id: 'wa:group:12036…', model: 'sonnet-4.6', age: '4d' },
+  { id: 'web:chat:local', model: 'opus-4.6', age: '5d' },
+  { id: 'cron:heartbeat', model: 'haiku-4.5', age: '10d' },
+];
+
+function renderSessions(sessions) {
+  const list = document.getElementById('sessions-list');
+  list.innerHTML = '';
+  sessions.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'session-row';
+    row.innerHTML = `
+      <span class="session-id">${s.id}</span>
+      <span class="session-model">${s.model}</span>
+      <span class="session-age">${s.age}</span>
+    `;
+    list.appendChild(row);
+  });
+  document.getElementById('session-count').textContent = sessions.length + ' OPEN';
+}
+
+async function fetchSessions() {
+  try {
+    const resp = await fetch('http://localhost:4000/api/sessions', { signal: AbortSignal.timeout(3000) });
+    if (!resp.ok) throw new Error('API error');
+    const data = await resp.json();
+    if (Array.isArray(data) && data.length > 0) {
+      renderSessions(data);
+      return;
+    }
+  } catch (e) { /* fallback */ }
+  renderSessions(defaultSessions);
+}
+
+// ── TERMINAL LOG ──
+const bootTermLines = [
+  { t: '$ jeffrey_os --init --mode=dashboard', c: 't-prompt' },
+  { t: '[BOOT] Neural core: claude-opus-4.6 (1M tokens)', c: 't-info' },
+  { t: '[BOOT] Memory: 5 files loaded (MEMORY.md + daily)', c: 't-info' },
+  { t: '[OK] WhatsApp gateway: LINKED', c: 't-success' },
+  { t: '[OK] iMessage gateway: ACTIVE', c: 't-success' },
+  { t: '[OK] Voice (Twilio): READY', c: 't-success' },
+  { t: '[SEC] DM Policy: JULIO ONLY', c: 't-success' },
+  { t: '[HW] Mac mini M4: 16GB · macOS 15.7.4', c: 't-info' },
+  { t: '[HW] EVA-02: i9-14900K + RTX 4090 (STANDBY)', c: 't-warn' },
+  { t: '╔══════════════════════════════════════════════╗', c: 't-success' },
+  { t: '║  ALL SYSTEMS OPERATIONAL — JEFFREY ONLINE    ║', c: 't-success' },
+  { t: '╚══════════════════════════════════════════════╝', c: 't-success' },
+  { t: '$ monitoring --all-channels --dashboard ...', c: 't-prompt' },
+];
+
+const liveTermLines = [
+  { t: '[HEARTBEAT] All systems GREEN', c: 't-success' },
+  { t: '[WA] Channel stable · auth OK', c: 't-info' },
+  { t: '[iMSG] Channel active · bridge OK', c: 't-info' },
+  { t: '[NET] Latency: {ms}ms (optimal)', c: 't-success' },
+  { t: '[CACHE] Hit rate: 99.{n}%', c: 't-success' },
+  { t: '[MEM] Memory sync: 5 files indexed', c: 't-info' },
+  { t: '[SEC] Perimeter scan: CLEAR', c: 't-success' },
+  { t: '[AI] Context: {ctx}k/1000k tokens', c: 't-info' },
+  { t: '[SEC] Threat scan: 0 anomalies', c: 't-success' },
+  { t: '[SYS] CPU: {cpu}% · MEM: {mem}%', c: 't-info' },
+  { t: '[CRON] Next heartbeat: {min}m', c: 't-dim' },
+  { t: '[GW] Port 4000: {req} req/min', c: 't-info' },
+  { t: '[DISK] I/O: {io}MB/s read', c: 't-info' },
+  { t: '[NET] Bandwidth: {down} ↓ / {up} ↑ Mbps', c: 't-info' },
+];
+
+const terminal = document.getElementById('terminal');
+let termLineIdx = 0;
+
+function addTermLine() {
+  let line;
+  if (termLineIdx < bootTermLines.length) {
+    line = bootTermLines[termLineIdx];
+  } else {
+    line = { ...liveTermLines[Math.floor(Math.random() * liveTermLines.length)] };
+    line.t = line.t
+      .replace('{ms}', Math.floor(8 + Math.random() * 15))
+      .replace('{n}', Math.floor(Math.random() * 9))
+      .replace('{ctx}', Math.floor(55 + Math.random() * 20))
+      .replace('{cpu}', Math.floor(metrics.cpu))
+      .replace('{mem}', Math.floor(metrics.mem))
+      .replace('{min}', Math.floor(10 + Math.random() * 50))
+      .replace('{req}', Math.floor(20 + Math.random() * 80))
+      .replace('{io}', Math.floor(50 + Math.random() * 200))
+      .replace('{down}', Math.floor(200 + Math.random() * 100))
+      .replace('{up}', Math.floor(50 + Math.random() * 50));
+  }
+
+  const div = document.createElement('div');
+  div.className = 'line ' + line.c;
+  const ts = termLineIdx >= bootTermLines.length
+    ? `[${new Date().toLocaleTimeString('en-US', { timeZone: 'America/Mexico_City', hour12: false })}] `
+    : '';
+  div.textContent = ts + line.t;
+  terminal.appendChild(div);
+  terminal.scrollTop = terminal.scrollHeight;
+  if (terminal.children.length > 50) terminal.removeChild(terminal.firstChild);
+  termLineIdx++;
+
+  const delay = termLineIdx <= bootTermLines.length
+    ? 100 + Math.random() * 100
+    : 2500 + Math.random() * 5000;
+  setTimeout(addTermLine, delay);
+}
+
+// ── NETWORK STATUS ──
+function updateNetworkStatus() {
+  const online = navigator.onLine;
+  const el = document.getElementById('net-online');
+  const badge = document.getElementById('net-badge');
+
+  if (online) {
+    el.textContent = 'YES';
+    el.className = 'net-stat-value text-green';
+    badge.textContent = 'CONNECTED';
+    badge.className = 'panel-badge badge-ok';
+  } else {
+    el.textContent = 'NO';
+    el.className = 'net-stat-value text-red';
+    badge.textContent = 'OFFLINE';
+    badge.className = 'panel-badge badge-warn';
+  }
+
+  // Connection type
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn) {
+    document.getElementById('net-type').textContent = (conn.effectiveType || conn.type || '--').toUpperCase();
+    if (conn.downlink) document.getElementById('net-down').textContent = conn.downlink + ' Mbps';
+  } else {
+    document.getElementById('net-type').textContent = 'WiFi';
+    document.getElementById('net-down').textContent = Math.floor(200 + Math.random() * 100) + ' Mbps';
+    document.getElementById('net-up').textContent = Math.floor(50 + Math.random() * 50) + ' Mbps';
+  }
+
+  // Simulated gateway latency
+  document.getElementById('net-latency-gw').textContent = Math.floor(5 + Math.random() * 15) + 'ms';
+}
+
+// ── PALACIO COUNTDOWN ──
+function updatePalacioCountdown() {
+  const due = new Date('2026-03-20T23:59:59-06:00');
+  const now = new Date();
+  const diff = due - now;
+  const days = Math.ceil(diff / 86400000);
+  const el = document.getElementById('palacio-countdown');
+  if (days > 0) {
+    el.textContent = `Due: March 20 (${days} days remaining)`;
+    el.style.color = days <= 3 ? '#ff3333' : days <= 5 ? '#ffa500' : '#ff6666';
+  } else {
+    el.textContent = 'OVERDUE!';
+    el.style.color = '#ff3333';
+  }
+}
+
+// ── QUICK ACTIONS ──
+function triggerAction(action) {
+  const actions = {
+    'wake-eva02': { msg: '[CMD] Wake-on-LAN sent to EVA-02...', cls: 't-warn' },
+    'system-check': { msg: '[CMD] Running full system diagnostic...', cls: 't-info' },
+    'clear-cache': { msg: '[CMD] Cache cleared — 512MB freed', cls: 't-success' },
+    'restart-gw': { msg: '[CMD] Restarting gateway on port 4000...', cls: 't-warn' },
+    'backup': { msg: '[CMD] Backup initiated — syncing to remote...', cls: 't-info' },
+    'code-red': { msg: '[ALERT] CODE RED — Activating all nodes!', cls: 't-error' },
+  };
+
+  const a = actions[action];
+  if (!a) return;
+
+  // Add to terminal
+  const div = document.createElement('div');
+  div.className = 'line ' + a.cls;
+  const ts = new Date().toLocaleTimeString('en-US', { timeZone: 'America/Mexico_City', hour12: false });
+  div.textContent = `[${ts}] ${a.msg}`;
+  terminal.appendChild(div);
+  terminal.scrollTop = terminal.scrollHeight;
+
+  // Flash the button
+  if (action === 'code-red') {
+    document.body.style.transition = 'background 0.3s';
+    document.body.style.background = 'rgba(255,0,0,0.1)';
+    setTimeout(() => { document.body.style.background = ''; }, 500);
+  }
+
+  // Try to hit a real endpoint
+  fetch(`http://localhost:4000/api/actions/${action}`, {
+    method: 'POST',
+    signal: AbortSignal.timeout(3000),
+  }).catch(() => { /* graceful fallback, action logged to terminal */ });
+}
+
+// ── REFRESH COUNTDOWN ──
+let refreshTimer = 30;
+function updateRefreshCountdown() {
+  refreshTimer--;
+  document.getElementById('refresh-countdown').textContent = refreshTimer;
+  if (refreshTimer <= 0) {
+    refreshTimer = 30;
+    refreshAllData();
+  }
+}
+
+function refreshAllData() {
+  updateMetrics();
+  fetchWeather();
+  fetchSessions();
+  updateNetworkStatus();
+  updatePalacioCountdown();
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', async () => {
+  initMatrix();
+
+  // Run boot sequence
+  await runBootSequence();
+
+  // Start all updaters
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  updateUptime();
+  setInterval(updateUptime, 1000);
+
+  updateMetrics();
+  setInterval(updateMetrics, 4000);
+
+  fetchWeather();
+  fetchSessions();
+  updateNetworkStatus();
+  updatePalacioCountdown();
+
+  setInterval(updateRefreshCountdown, 1000);
+  setInterval(updateNetworkStatus, 10000);
+  setInterval(updatePalacioCountdown, 60000);
+
+  // Start terminal feed (delayed so boot sequence finishes first)
+  setTimeout(addTermLine, 1000);
+
+  // Listen for online/offline
+  window.addEventListener('online', updateNetworkStatus);
+  window.addEventListener('offline', updateNetworkStatus);
+});
+</script>
+</body>
+</html>

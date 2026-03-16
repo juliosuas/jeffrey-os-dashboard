@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>JEFFREY OS v4.6 // SYSTEM ONLINE</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; color: #00ff41; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; }
+
+.matrix-bg {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 0; opacity: 0.15;
+}
+.matrix-bg canvas { width: 100%; height: 100%; }
+
+.container {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  height: 100vh; padding: 20px;
+}
+
+.header {
+  text-align: center; padding: 20px;
+  border: 1px solid #00ff41;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+  animation: flicker 3s infinite;
+}
+
+.header h1 { font-size: 3em; letter-spacing: 10px; }
+.header .subtitle { font-size: 1.2em; color: #0af; margin-top: 5px; text-shadow: 0 0 10px #0af; }
+
+.panels { display: flex; flex: 1; gap: 15px; overflow: hidden; }
+
+.panel {
+  flex: 1; border: 1px solid #00ff41; padding: 15px;
+  overflow: hidden; position: relative;
+}
+.panel-title {
+  color: #0af; font-size: 0.9em; margin-bottom: 10px;
+  border-bottom: 1px solid #0af; padding-bottom: 5px;
+  text-shadow: 0 0 5px #0af;
+}
+
+.terminal-output {
+  font-size: 0.75em; line-height: 1.4;
+  overflow: hidden; height: calc(100% - 30px);
+}
+.terminal-output .line { opacity: 0; animation: fadeIn 0.1s forwards; white-space: nowrap; }
+.prompt { color: #ff0; }
+.error { color: #f00; }
+.success { color: #0f0; }
+.info { color: #0af; }
+.warn { color: #ffa500; }
+
+.stats-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  font-size: 0.8em;
+}
+.stat-item { padding: 5px; border: 1px solid #333; }
+.stat-label { color: #888; font-size: 0.8em; }
+.stat-value { color: #00ff41; font-size: 1.4em; text-shadow: 0 0 5px #00ff41; }
+.stat-bar { height: 4px; background: #111; margin-top: 4px; }
+.stat-fill { height: 100%; background: #00ff41; transition: width 1s; }
+.stat-fill.warn { background: #ffa500; }
+.stat-fill.danger { background: #f00; }
+
+.globe-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.ascii-globe { font-size: 0.6em; line-height: 1.1; color: #00ff41; text-shadow: 0 0 3px #00ff41; }
+
+.bottom-bar {
+  margin-top: 15px; padding: 10px;
+  border: 1px solid #333;
+  display: flex; justify-content: space-between;
+  font-size: 0.8em;
+}
+.bottom-bar .live { color: #f00; animation: blink 1s infinite; }
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.8; }
+  94% { opacity: 1; }
+  96% { opacity: 0.7; }
+  97% { opacity: 1; }
+}
+@keyframes fadeIn { to { opacity: 1; } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes pulse { 0%, 100% { text-shadow: 0 0 5px #00ff41; } 50% { text-shadow: 0 0 20px #00ff41, 0 0 40px #00ff41; } }
+
+.typing { animation: pulse 2s infinite; }
+</style>
+</head>
+<body>
+
+<div class="matrix-bg"><canvas id="matrix"></canvas></div>
+
+<div class="container">
+  <div class="header">
+    <h1>⟁ JEFFREY OS</h1>
+    <div class="subtitle">CLAUDE OPUS 4.6 // NEURAL CORE ACTIVE // MAC MINI M4 NODE</div>
+  </div>
+
+  <div class="panels">
+    <!-- Terminal Panel -->
+    <div class="panel" style="flex: 1.5">
+      <div class="panel-title">█ TERMINAL // LIVE FEED</div>
+      <div class="terminal-output" id="terminal"></div>
+    </div>
+
+    <!-- System Stats -->
+    <div class="panel">
+      <div class="panel-title">█ SYSTEM METRICS</div>
+      <div class="stats-grid" id="stats">
+        <div class="stat-item">
+          <div class="stat-label">CPU LOAD</div>
+          <div class="stat-value" id="cpu">12%</div>
+          <div class="stat-bar"><div class="stat-fill" id="cpu-bar" style="width:12%"></div></div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">MEMORY</div>
+          <div class="stat-value" id="mem">47%</div>
+          <div class="stat-bar"><div class="stat-fill" id="mem-bar" style="width:47%"></div></div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">NEURAL TOKENS</div>
+          <div class="stat-value" id="tokens">60k</div>
+          <div class="stat-bar"><div class="stat-fill" id="tok-bar" style="width:6%"></div></div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">CONTEXT</div>
+          <div class="stat-value">1M</div>
+          <div class="stat-bar"><div class="stat-fill" style="width:6%"></div></div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">CHANNELS</div>
+          <div class="stat-value success">2 LIVE</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">SESSIONS</div>
+          <div class="stat-value">14</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">GPU (EVA-02)</div>
+          <div class="stat-value warn" style="color:#ffa500">STANDBY</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">THREAT LEVEL</div>
+          <div class="stat-value success">LOW</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Network Globe -->
+    <div class="panel globe-panel">
+      <div class="panel-title">█ NETWORK TOPOLOGY</div>
+      <pre class="ascii-globe" id="globe"></pre>
+      <div style="margin-top:15px; font-size:0.7em; text-align:center">
+        <span class="success">● MAC-MINI-M4</span><br>
+        <span class="info">● iPHONE-17-PRO</span><br>
+        <span style="color:#ffa500">● EVA-02 (SLEEP)</span><br>
+        <span class="success">● WhatsApp GW</span><br>
+        <span class="success">● iMessage GW</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <span><span class="live">● REC</span> JEFFREY OS v4.6</span>
+    <span>MODEL: CLAUDE-OPUS-4.6 | CTX: 1,000,000 TOKENS</span>
+    <span id="clock"></span>
+  </div>
+</div>
+
+<script>
+// Matrix rain background
+const canvas = document.getElementById('matrix');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+const chars = 'ジェフリーABCDEF0123456789アイウエオカキクケコ';
+const fontSize = 14;
+const columns = canvas.width / fontSize;
+const drops = Array(Math.floor(columns)).fill(1);
+
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#00ff41';
+  ctx.font = fontSize + 'px monospace';
+  for (let i = 0; i < drops.length; i++) {
+    const text = chars[Math.floor(Math.random() * chars.length)];
+    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}
+setInterval(drawMatrix, 50);
+
+// Terminal simulation
+const terminalLines = [
+  { text: '$ initializing jeffrey_os v4.6 ...', cls: 'prompt' },
+  { text: '[BOOT] Loading neural weights: claude-opus-4.6', cls: 'info' },
+  { text: '[BOOT] Context window: 1,000,000 tokens', cls: 'info' },
+  { text: '[OK] Neural core online', cls: 'success' },
+  { text: '[OK] Memory system loaded (MEMORY.md + 5 daily files)', cls: 'success' },
+  { text: '[OK] WhatsApp gateway: CONNECTED (+5213342870715)', cls: 'success' },
+  { text: '[OK] iMessage gateway: CONNECTED (+525614963583)', cls: 'success' },
+  { text: '[WARN] EVA-02 (RTX 4090): STANDBY - Wake-on-LAN ready', cls: 'warn' },
+  { text: '$ scanning network topology ...', cls: 'prompt' },
+  { text: '[NET] Mac mini M4 → 192.168.1.x (PRIMARY NODE)', cls: 'info' },
+  { text: '[NET] iPhone 17 Pro Max → iMessage bridge', cls: 'info' },
+  { text: '[NET] EVA-02 → i9-14900K + RTX 4090 + 48GB DDR5', cls: 'info' },
+  { text: '[SEC] Threat level: LOW', cls: 'success' },
+  { text: '[SEC] DM policy: JULIO ONLY (+5215614963583)', cls: 'success' },
+  { text: '[SEC] Dan HD: ACCESS REVOKED ✗', cls: 'error' },
+  { text: '$ loading skill modules ...', cls: 'prompt' },
+  { text: '[SKILL] OSINT Engine .................. LOADED', cls: 'success' },
+  { text: '[SKILL] Code Generation .............. LOADED', cls: 'success' },
+  { text: '[SKILL] Voice Synthesis (ElevenLabs) . LOADED', cls: 'success' },
+  { text: '[SKILL] Image Generation (DALL-E) .... LOADED', cls: 'success' },
+  { text: '[SKILL] Web Research (Brave) ......... LOADED', cls: 'success' },
+  { text: '[SKILL] Browser Automation ........... LOADED', cls: 'success' },
+  { text: '', cls: '' },
+  { text: '╔══════════════════════════════════════════════╗', cls: 'success' },
+  { text: '║  JEFFREY OS v4.6 — ALL SYSTEMS OPERATIONAL   ║', cls: 'success' },
+  { text: '║  "We don\'t chase. We attract."               ║', cls: 'success' },
+  { text: '╚══════════════════════════════════════════════╝', cls: 'success' },
+  { text: '', cls: '' },
+  { text: '$ monitoring channels ...', cls: 'prompt' },
+];
+
+const extraLines = [
+  { text: '[HEARTBEAT] System check: ALL GREEN', cls: 'success' },
+  { text: '[WA] Incoming: Group message processed', cls: 'info' },
+  { text: '[MEM] Memory sync: 5 files indexed', cls: 'info' },
+  { text: '[NET] Latency: 12ms (optimal)', cls: 'success' },
+  { text: '[AI] Token usage: 60k/1M (6%)', cls: 'info' },
+  { text: '[SEC] Perimeter scan: CLEAR', cls: 'success' },
+  { text: '[WA] Channel: STABLE', cls: 'success' },
+  { text: '[iMSG] Channel: STABLE', cls: 'success' },
+  { text: '[CACHE] Hit rate: 99.2%', cls: 'success' },
+  { text: '[CPU] Load average: 0.12', cls: 'info' },
+  { text: '[HEARTBEAT] Next check in 58m', cls: 'info' },
+  { text: '[SEC] Brute force attempts: 0', cls: 'success' },
+  { text: '[NET] Bandwidth: 245 Mbps ↓ / 89 Mbps ↑', cls: 'info' },
+  { text: '[AI] Reasoning depth: MAXIMUM', cls: 'warn' },
+  { text: '[SYS] Uptime: 32d 14h 22m', cls: 'success' },
+];
+
+const terminal = document.getElementById('terminal');
+let lineIndex = 0;
+
+function addLine() {
+  const line = lineIndex < terminalLines.length
+    ? terminalLines[lineIndex]
+    : extraLines[Math.floor(Math.random() * extraLines.length)];
+  
+  const div = document.createElement('div');
+  div.className = 'line ' + line.cls;
+  div.textContent = (lineIndex >= terminalLines.length ? `[${new Date().toLocaleTimeString()}] ` : '') + line.text;
+  div.style.animationDelay = '0s';
+  terminal.appendChild(div);
+  terminal.scrollTop = terminal.scrollHeight;
+  
+  if (terminal.children.length > 50) terminal.removeChild(terminal.firstChild);
+  lineIndex++;
+  
+  const delay = lineIndex <= terminalLines.length ? 150 + Math.random() * 200 : 2000 + Math.random() * 4000;
+  setTimeout(addLine, delay);
+}
+addLine();
+
+// Clock
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleString('en-US', {
+    timeZone: 'America/Mexico_City', hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Stats animation
+function updateStats() {
+  const cpu = 8 + Math.random() * 20;
+  const mem = 40 + Math.random() * 15;
+  const tok = 55 + Math.random() * 15;
+  document.getElementById('cpu').textContent = Math.floor(cpu) + '%';
+  document.getElementById('cpu-bar').style.width = cpu + '%';
+  document.getElementById('mem').textContent = Math.floor(mem) + '%';
+  document.getElementById('mem-bar').style.width = mem + '%';
+  document.getElementById('tokens').textContent = Math.floor(tok) + 'k';
+  document.getElementById('tok-bar').style.width = (tok/10) + '%';
+}
+setInterval(updateStats, 3000);
+
+// ASCII Globe rotation
+const globeFrames = [
+  "      .-~~~-.\n    .'       '.\n   /    ___    \\\n  |   .'   '.  |\n  |  /  /\\  \\  |\n  | |  /  \\  | |\n  |  \\/    \\/  |\n   \\    ''    /\n    '.      .'\n      '~~~'",
+  "      .-~~~-.\n    .'  .    '.\n   /   / \\    \\\n  |   /   \\   |\n  |  |  .  |  |\n  |  |  |  |  |\n  |   \\ | /   |\n   \\   \\|/   /\n    '.      .'\n      '~~~'",
+  "      .-~~~-.\n    .'    .  '.\n   /    / \\   \\\n  |    /   \\  |\n  |   .  |  . |\n  |   |  |  | |\n  |    \\ | /  |\n   \\    \\|/  /\n    '.      .'\n      '~~~'",
+];
+let globeFrame = 0;
+function rotateGlobe() {
+  document.getElementById('globe').textContent = globeFrames[globeFrame % globeFrames.length];
+  globeFrame++;
+}
+setInterval(rotateGlobe, 1500);
+rotateGlobe();
+</script>
+</body>
+</html>
