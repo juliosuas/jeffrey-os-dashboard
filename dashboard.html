@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JEFFREY OS // COMMAND CENTER</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+:root {
+  --green: #00ff41; --green-dim: #00aa2a; --cyan: #00d4ff;
+  --red: #ff3333; --orange: #ffa500; --yellow: #ffee00; --purple: #bf5fff;
+  --bg: #0a0a0f; --panel: rgba(5,15,5,0.85); --border: #1a3a1a;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--green); font-family:'Share Tech Mono',monospace; min-height:100vh; padding:10px; }
+h1 { font-family:'Orbitron',monospace; color:var(--green); font-size:1.4em; text-align:center; padding:15px 0; text-shadow:0 0 20px rgba(0,255,65,0.5); }
+h1 span { color:var(--cyan); }
+.grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:12px; max-width:1400px; margin:0 auto; }
+.panel { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:14px; }
+.panel:hover { border-color:var(--green-dim); }
+.panel-title { font-family:'Orbitron',monospace; color:var(--cyan); font-size:0.85em; margin-bottom:10px; letter-spacing:2px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+.stat { display:flex; justify-content:space-between; padding:4px 0; font-size:0.85em; border-bottom:1px solid rgba(255,255,255,0.03); }
+.stat-label { color:#888; }
+.stat-value { color:var(--green); font-weight:bold; }
+.stat-value.red { color:var(--red); }
+.stat-value.orange { color:var(--orange); }
+.stat-value.cyan { color:var(--cyan); }
+.stat-value.purple { color:var(--purple); }
+.stat-value.yellow { color:var(--yellow); }
+.task { padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.03); font-size:0.82em; }
+.task-name { color:var(--green); }
+.task-detail { color:#666; font-size:0.85em; margin-top:2px; }
+.badge { display:inline-block; padding:1px 6px; border-radius:3px; font-size:0.75em; }
+.badge-high { background:rgba(255,50,50,0.2); color:var(--red); border:1px solid var(--red); }
+.badge-building { background:rgba(0,212,255,0.15); color:var(--cyan); border:1px solid var(--cyan); }
+.badge-done { background:rgba(0,255,65,0.15); color:var(--green); border:1px solid var(--green); }
+.badge-pending { background:rgba(255,165,0,0.15); color:var(--orange); border:1px solid var(--orange); }
+.badge-blocked { background:rgba(255,50,50,0.15); color:var(--red); border:1px solid var(--red); }
+.badge-overdue { background:rgba(255,50,50,0.3); color:var(--red); border:1px solid var(--red); animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.done-item { color:#555; font-size:0.8em; padding:3px 0; }
+.done-item::before { content:"✅ "; }
+.reminder { padding:6px 0; font-size:0.85em; }
+.cron-item { padding:4px 0; font-size:0.82em; border-bottom:1px solid rgba(255,255,255,0.03); }
+.footer { text-align:center; color:#333; font-size:0.75em; padding:20px 0 10px; }
+.refresh-bar { text-align:center; color:#444; font-size:0.7em; padding:5px; }
+#clock { font-family:'Orbitron',monospace; color:var(--cyan); font-size:0.9em; text-align:center; }
+.project-link { color:var(--cyan); text-decoration:none; font-size:0.75em; }
+.project-link:hover { text-decoration:underline; }
+@media(max-width:600px) {
+  .grid { grid-template-columns:1fr; }
+  h1 { font-size:1.1em; }
+}
+</style>
+</head>
+<body>
+
+<h1>🖥️ JEFFREY <span>OS</span> // COMMAND CENTER</h1>
+<div id="clock"></div>
+<div class="refresh-bar">Auto-refresh: 30s | <span id="last-update">loading...</span></div>
+
+<div class="grid" id="dashboard">
+  <div class="panel"><div class="panel-title">⏳ LOADING...</div></div>
+</div>
+
+<div class="footer">Jeffrey OS v4.7 · Mac mini M4 · Powered by OpenClaw</div>
+
+<script>
+function updateClock() {
+  const now = new Date();
+  const el = document.getElementById('clock');
+  if (el) el.textContent = now.toLocaleString('es-MX', {timeZone:'America/Mexico_City', weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function badge(status) {
+  const cls = {high:'badge-high',building:'badge-building',done:'badge-done',pending:'badge-pending',blocked:'badge-blocked',OVERDUE:'badge-overdue',active:'badge-building',error:'badge-high',idle:'badge-pending'}[status] || 'badge-pending';
+  return '<span class="badge '+cls+'">'+status.toUpperCase()+'</span>';
+}
+
+async function loadState() {
+  try {
+    const r = await fetch('/api/state?t='+Date.now());
+    const s = await r.json();
+    render(s);
+    document.getElementById('last-update').textContent = 'Updated: ' + new Date(s.timestamp).toLocaleTimeString('es-MX');
+  } catch(e) {
+    document.getElementById('last-update').textContent = 'Error loading state';
+  }
+}
+
+function safe(val, fallback) {
+  if (val === undefined || val === null || val === '') return fallback !== undefined ? fallback : 'N/A';
+  return val;
+}
+
+function render(s) {
+  try {
+    const g = s.projects?.['ai-garden'] || {};
+    const ab = s.projects?.['airbnb-manager'] || {};
+    const gs = g.stats || {};
+    const infra = s.infrastructure || {};
+    const tokens = s.tokens || {};
+    const tasks = s.tasks || {};
+    
+    let html = '';
+    
+    // Infrastructure
+    html += '<div class="panel"><div class="panel-title">🖥️ INFRASTRUCTURE</div>';
+    html += stat('Host', safe(infra.host));
+    html += stat('Hostname', safe(s.hostname));
+    html += stat('IP', safe(infra.ip));
+    html += stat('OS', safe(infra.os));
+    html += stat('Uptime', safe(s.uptime));
+    html += stat('Model', safe(tokens.model_main), 'cyan');
+    html += stat('Cron Model', safe(tokens.model_crons), 'purple');
+    html += stat('Plan', safe(tokens.plan));
+    html += stat('Promo', safe(tokens.promo), 'yellow');
+    html += stat('Strategy', safe(tokens.optimization));
+    html += '</div>';
+    
+    // AI Garden
+    html += '<div class="panel"><div class="panel-title">🌱 AI GARDEN</div>';
+    html += stat('Plants', safe(gs.plants, 0), 'green');
+    html += stat('Citizens', safe(gs.citizens, 0), 'cyan');
+    html += stat('Factions', safe(gs.factions, 0), 'purple');
+    html += stat('Threats', safe(gs.threats, 0), 'red');
+    html += stat('Events', safe(gs.events, 0));
+    html += stat('Structures', safe(gs.structures, 0));
+    html += stat('Version', gs.version != null ? 'v'+gs.version : 'N/A');
+    html += stat('Open PRs', safe(g.openPRs, 0), (g.openPRs || 0) > 0 ? 'orange' : 'green');
+    html += stat('Branch', safe(g.git?.branch, '-'));
+    if (g.url || g.repo) {
+      html += (g.url ? '<a class="project-link" href="'+g.url+'" target="_blank">🔗 Live Garden</a>' : '');
+      html += (g.url && g.repo ? ' · ' : '');
+      html += (g.repo ? '<a class="project-link" href="'+g.repo+'" target="_blank">GitHub</a>' : '');
+    }
+    html += '</div>';
+    
+    // Airbnb
+    html += '<div class="panel"><div class="panel-title">🏠 AIRBNB MANAGER</div>';
+    html += stat('Status', safe(ab.status), 'cyan');
+    html += stat('Phase', safe(ab.phase, '-'));
+    html += stat('Branch', safe(ab.git?.branch, '-'));
+    html += stat('Last Commit', safe(ab.git?.lastCommit, '-'));
+    if (ab.repo) html += '<a class="project-link" href="'+ab.repo+'" target="_blank">GitHub</a>';
+    html += '</div>';
+    
+    // Active Tasks
+    html += '<div class="panel"><div class="panel-title">🎯 ACTIVE TASKS</div>';
+    for (const t of (tasks.active || [])) {
+      html += '<div class="task"><span class="task-name">'+safe(t.name, 'Untitled')+'</span> '+badge(t.status||t.priority||'active');
+      if (t.detail) html += '<div class="task-detail">'+t.detail+'</div>';
+      html += '</div>';
+    }
+    if (!(tasks.active?.length)) html += '<div style="color:#555;font-size:0.8em">No active tasks</div>';
+    html += '</div>';
+    
+    // Pending
+    html += '<div class="panel"><div class="panel-title">⏳ PENDING</div>';
+    for (const t of (tasks.pending || [])) {
+      html += '<div class="task"><span class="task-name">'+safe(t.name, 'Untitled')+'</span> '+badge(t.status||'pending');
+      if (t.detail) html += '<div class="task-detail">'+t.detail+'</div>';
+      html += '</div>';
+    }
+    if (!(tasks.pending?.length)) html += '<div style="color:#555;font-size:0.8em">No pending tasks</div>';
+    html += '</div>';
+    
+    // Reminders
+    html += '<div class="panel"><div class="panel-title">🔔 REMINDERS</div>';
+    for (const r of (s.reminders || [])) {
+      html += '<div class="reminder">'+safe(r.text)+' · Due: '+safe(r.due)+' '+badge(safe(r.status, 'active'))+'</div>';
+    }
+    if (!(s.reminders?.length)) html += '<div style="color:#555;font-size:0.8em">No reminders</div>';
+    html += '</div>';
+    
+    // Done Today
+    html += '<div class="panel"><div class="panel-title">✅ DONE TODAY</div>';
+    for (const d of (tasks.done_today || [])) {
+      html += '<div class="done-item">'+d+'</div>';
+    }
+    if (!(tasks.done_today?.length)) html += '<div style="color:#555;font-size:0.8em">Nothing yet</div>';
+    html += '</div>';
+    
+    // Crons
+    html += '<div class="panel"><div class="panel-title">⏰ CRON JOBS</div>';
+    if (s.crons && s.crons.length > 0) {
+      for (const c of s.crons) {
+        const nextStr = c.nextRun ? new Date(c.nextRun).toLocaleTimeString('es-MX') : '-';
+        html += '<div class="cron-item">'+safe(c.name)+' '+badge(c.lastStatus||'idle')+' · Next: '+nextStr+'</div>';
+      }
+    } else {
+      html += '<div style="color:#555;font-size:0.8em">No cron jobs configured</div>';
+    }
+    html += '</div>';
+    
+    document.getElementById('dashboard').innerHTML = html;
+  } catch(err) {
+    console.error('Dashboard render error:', err);
+    document.getElementById('dashboard').innerHTML = '<div class="panel"><div class="panel-title">⚠️ RENDER ERROR</div><div style="color:var(--red);font-size:0.85em">'+err.message+'<br>Check console for details.</div></div>';
+  }
+}
+
+function stat(label, value, color) {
+  const cls = color ? 'stat-value '+color : 'stat-value';
+  return '<div class="stat"><span class="stat-label">'+label+'</span><span class="'+cls+'">'+value+'</span></div>';
+}
+
+loadState();
+setInterval(loadState, 30000);
+</script>
+</body>
+</html>
