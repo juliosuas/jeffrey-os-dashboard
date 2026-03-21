@@ -89,6 +89,10 @@ state = {
             "phase": "Phase 1: Multi-tenant foundation",
             "repo": "https://github.com/juliosuas/airbnb-manager",
         },
+        "fairwaycircle": {
+            "status": "active",
+            "detail": "Fairway Circle project",
+        },
     },
 
     "tasks": {
@@ -115,7 +119,7 @@ state = {
     },
 
     "reminders": [
-        {"text": "Palacio de Hierro $1,915 MXN", "due": "2026-03-20", "status": "OVERDUE"},
+        {"text": "Palacio de Hierro $1,915 MXN", "due": "2026-03-20", "status": "paid"},
         {"text": "2x tokens promo ends", "due": "2026-03-27", "status": "active"},
     ],
 
