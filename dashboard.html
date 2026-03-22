@@ -5,210 +5,430 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JEFFREY OS // COMMAND CENTER</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@500;700;900&display=swap');
 :root {
-  --green: #00ff41; --green-dim: #00aa2a; --cyan: #00d4ff;
-  --red: #ff3333; --orange: #ffa500; --yellow: #ffee00; --purple: #bf5fff;
-  --bg: #0a0a0f; --panel: rgba(5,15,5,0.85); --border: #1a3a1a;
+  --green: #00ff88; --green-dim: #00cc6a; --green-glow: rgba(0,255,136,0.15);
+  --cyan: #00d4ff; --cyan-dim: #0099cc; --cyan-glow: rgba(0,212,255,0.1);
+  --red: #ff4466; --orange: #ff9f43; --yellow: #ffd32a; --purple: #a855f7;
+  --bg: #0b0e14; --surface: #131820; --surface2: #1a2030;
+  --border: #1e2a3a; --border-hover: #2a3a50;
+  --text: #e0e6f0; --text-dim: #6b7a90; --text-muted: #3d4a5c;
+  --radius: 12px;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:var(--bg); color:var(--green); font-family:'Share Tech Mono',monospace; min-height:100vh; padding:10px; }
-h1 { font-family:'Orbitron',monospace; color:var(--green); font-size:1.4em; text-align:center; padding:15px 0; text-shadow:0 0 20px rgba(0,255,65,0.5); }
-h1 span { color:var(--cyan); }
-.grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:12px; max-width:1400px; margin:0 auto; }
-.panel { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:14px; }
-.panel:hover { border-color:var(--green-dim); }
-.panel-title { font-family:'Orbitron',monospace; color:var(--cyan); font-size:0.85em; margin-bottom:10px; letter-spacing:2px; border-bottom:1px solid var(--border); padding-bottom:6px; }
-.stat { display:flex; justify-content:space-between; padding:4px 0; font-size:0.85em; border-bottom:1px solid rgba(255,255,255,0.03); }
-.stat-label { color:#888; }
-.stat-value { color:var(--green); font-weight:bold; }
-.stat-value.red { color:var(--red); }
-.stat-value.orange { color:var(--orange); }
-.stat-value.cyan { color:var(--cyan); }
-.stat-value.purple { color:var(--purple); }
-.stat-value.yellow { color:var(--yellow); }
-.task { padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.03); font-size:0.82em; }
-.task-name { color:var(--green); }
-.task-detail { color:#666; font-size:0.85em; margin-top:2px; }
-.badge { display:inline-block; padding:1px 6px; border-radius:3px; font-size:0.75em; }
-.badge-high { background:rgba(255,50,50,0.2); color:var(--red); border:1px solid var(--red); }
-.badge-building { background:rgba(0,212,255,0.15); color:var(--cyan); border:1px solid var(--cyan); }
-.badge-done { background:rgba(0,255,65,0.15); color:var(--green); border:1px solid var(--green); }
-.badge-pending { background:rgba(255,165,0,0.15); color:var(--orange); border:1px solid var(--orange); }
-.badge-blocked { background:rgba(255,50,50,0.15); color:var(--red); border:1px solid var(--red); }
-.badge-overdue { background:rgba(255,50,50,0.3); color:var(--red); border:1px solid var(--red); animation:pulse 1s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-.done-item { color:#555; font-size:0.8em; padding:3px 0; }
-.done-item::before { content:"✅ "; }
-.reminder { padding:6px 0; font-size:0.85em; }
-.cron-item { padding:4px 0; font-size:0.82em; border-bottom:1px solid rgba(255,255,255,0.03); }
-.footer { text-align:center; color:#333; font-size:0.75em; padding:20px 0 10px; }
-.refresh-bar { text-align:center; color:#444; font-size:0.7em; padding:5px; }
-#clock { font-family:'Orbitron',monospace; color:var(--cyan); font-size:0.9em; text-align:center; }
-.project-link { color:var(--cyan); text-decoration:none; font-size:0.75em; }
-.project-link:hover { text-decoration:underline; }
-@media(max-width:600px) {
-  .grid { grid-template-columns:1fr; }
-  h1 { font-size:1.1em; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Inter', -apple-system, sans-serif;
+  min-height: 100vh; padding: 16px;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Header */
+.header {
+  max-width: 1600px; margin: 0 auto 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.header-title {
+  font-family: 'Orbitron', monospace; font-size: 1.5rem; font-weight: 900;
+  color: var(--green); letter-spacing: 3px;
+  text-shadow: 0 0 30px rgba(0,255,136,0.3);
+}
+.header-title span { color: var(--cyan); }
+.header-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+#clock {
+  font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 600;
+  color: var(--cyan); letter-spacing: 1px;
+}
+.status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.status-online { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100%{ opacity:1; box-shadow:0 0 4px var(--green); } 50%{ opacity:0.5; box-shadow:0 0 12px var(--green); } }
+
+/* System bar */
+.system-bar {
+  max-width: 1600px; margin: 0 auto 20px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+}
+.metric-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; text-align: center; transition: border-color 0.2s;
+}
+.metric-card:hover { border-color: var(--border-hover); }
+.metric-label { font-size: 0.7rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+.metric-value { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; }
+.metric-sub { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+/* Garden hero */
+.garden-hero {
+  max-width: 1600px; margin: 0 auto 20px;
+  background: linear-gradient(135deg, rgba(0,255,136,0.05), rgba(0,212,255,0.05));
+  border: 1px solid rgba(0,255,136,0.2); border-radius: var(--radius);
+  padding: 24px; display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center;
+}
+.garden-hero-title {
+  font-family: 'Orbitron', monospace; font-size: 1.1rem; font-weight: 700;
+  color: var(--green); letter-spacing: 2px; margin-bottom: 12px;
+}
+.garden-stats-grid { display: flex; flex-wrap: wrap; gap: 24px; }
+.garden-stat { text-align: center; }
+.garden-stat-value {
+  font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700;
+  line-height: 1;
+}
+.garden-stat-label { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.garden-version {
+  font-family: 'Orbitron', monospace; font-size: 2.5rem; font-weight: 900;
+  color: var(--cyan); text-align: center; opacity: 0.6;
+}
+.garden-links { margin-top: 12px; display: flex; gap: 12px; }
+.garden-links a {
+  color: var(--cyan); text-decoration: none; font-size: 0.8rem; font-weight: 500;
+  padding: 4px 10px; border: 1px solid var(--cyan-dim); border-radius: 6px; transition: all 0.2s;
+}
+.garden-links a:hover { background: rgba(0,212,255,0.1); }
+
+/* Main grid */
+.main-grid {
+  max-width: 1600px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+/* Panel */
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; transition: border-color 0.2s;
+}
+.panel:hover { border-color: var(--border-hover); }
+.panel-full { grid-column: 1 / -1; }
+.panel-title {
+  font-family: 'Orbitron', monospace; font-size: 0.78rem; font-weight: 700;
+  color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.panel-title .count {
+  float: right; font-family: 'JetBrains Mono', monospace;
+  color: var(--text-muted); font-size: 0.72rem;
+}
+
+/* Project rows */
+.project-row {
+  display: grid; grid-template-columns: auto 1fr auto auto;
+  align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 0.88rem;
+}
+.project-row:last-child { border-bottom: none; }
+.health-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.health-active { background: var(--green); box-shadow: 0 0 8px rgba(0,255,136,0.4); }
+.health-recent { background: var(--yellow); box-shadow: 0 0 8px rgba(255,211,42,0.3); }
+.health-stale { background: var(--text-muted); }
+.project-name { font-weight: 600; color: var(--text); }
+.project-name .branch { font-weight: 400; color: var(--text-dim); font-size: 0.78rem; margin-left: 6px; }
+.project-commit { color: var(--text-dim); font-size: 0.78rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.project-time { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; }
+.project-time.time-active { color: var(--green); }
+.project-time.time-recent { color: var(--yellow); }
+
+/* Cron rows */
+.cron-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 0.85rem;
+}
+.cron-row:last-child { border-bottom: none; }
+.cron-name { font-weight: 600; color: var(--text); flex: 1; }
+.cron-sched { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-dim); }
+.cron-next { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--cyan); }
+
+/* Badges */
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+}
+.badge-ok { background: rgba(0,255,136,0.1); color: var(--green); }
+.badge-error { background: rgba(255,68,102,0.15); color: var(--red); }
+.badge-warn { background: rgba(255,159,67,0.15); color: var(--orange); }
+.badge-info { background: rgba(0,212,255,0.1); color: var(--cyan); }
+.badge-disabled { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+
+/* Info rows */
+.info-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { color: var(--text-dim); }
+.info-value { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+
+/* Footer */
+.footer {
+  max-width: 1600px; margin: 24px auto 0;
+  text-align: center; color: var(--text-muted); font-size: 0.72rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.refresh-info { color: var(--text-muted); font-size: 0.72rem; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .garden-hero { grid-template-columns: 1fr; text-align: center; }
+  .garden-version { font-size: 1.8rem; }
+  .garden-stats-grid { justify-content: center; }
+  .garden-links { justify-content: center; }
+  .project-row { grid-template-columns: auto 1fr auto; }
+  .project-commit { display: none; }
+}
+@media (max-width: 500px) {
+  body { padding: 10px; }
+  .header-title { font-size: 1.1rem; }
+  .system-bar { grid-template-columns: repeat(2, 1fr); }
+  .metric-value { font-size: 1.2rem; }
+  .garden-stat-value { font-size: 1.5rem; }
+  .garden-version { font-size: 1.4rem; }
+}
+
+/* Smooth transitions for data updates */
+.fade-update { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0.6; } to { opacity: 1; } }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
 </head>
 <body>
 
-<h1>🖥️ JEFFREY <span>OS</span> // COMMAND CENTER</h1>
-<div id="clock"></div>
-<div class="refresh-bar">Auto-refresh: 30s | <span id="last-update">loading...</span></div>
-
-<div class="grid" id="dashboard">
-  <div class="panel"><div class="panel-title">⏳ LOADING...</div></div>
+<!-- Header -->
+<div class="header">
+  <div class="header-title">JEFFREY <span>OS</span></div>
+  <div class="header-right">
+    <span class="status-pill status-online"><span class="status-dot"></span> ONLINE</span>
+    <div id="clock"></div>
+    <span class="refresh-info" id="refresh-info">15s</span>
+  </div>
 </div>
 
-<div class="footer">Jeffrey OS v4.7 · Mac mini M4 · Powered by OpenClaw</div>
+<!-- System Metrics Bar -->
+<div class="system-bar" id="system-bar"></div>
+
+<!-- Garden Hero -->
+<div class="garden-hero" id="garden-hero"></div>
+
+<!-- Main Grid -->
+<div class="main-grid" id="main-grid"></div>
+
+<div class="footer">Jeffrey OS v5.0 · Mac mini M4 · Powered by OpenClaw</div>
 
 <script>
+const REFRESH_MS = 15000;
+let lastData = null;
+
 function updateClock() {
-  const now = new Date();
   const el = document.getElementById('clock');
-  if (el) el.textContent = now.toLocaleString('es-MX', {timeZone:'America/Mexico_City', weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  if (!el) return;
+  const now = new Date();
+  el.textContent = now.toLocaleString('es-MX', {
+    timeZone: 'America/Mexico_City',
+    weekday: 'short', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
 }
 setInterval(updateClock, 1000);
 updateClock();
 
+function s(val, fb) { return (val !== undefined && val !== null && val !== '') ? val : (fb !== undefined ? fb : '—'); }
+
 function badge(status) {
-  const cls = {high:'badge-high',building:'badge-building',done:'badge-done',pending:'badge-pending',blocked:'badge-blocked',OVERDUE:'badge-overdue',active:'badge-building',error:'badge-high',idle:'badge-pending'}[status] || 'badge-pending';
-  return '<span class="badge '+cls+'">'+status.toUpperCase()+'</span>';
+  const map = { ok:'badge-ok', error:'badge-error', warn:'badge-warn', idle:'badge-info', disabled:'badge-disabled' };
+  const cls = map[status] || 'badge-info';
+  return `<span class="badge ${cls}">${status}</span>`;
+}
+
+function healthClass(h) {
+  return { active:'health-active', recent:'health-recent', stale:'health-stale' }[h] || 'health-stale';
+}
+
+function timeClass(h) {
+  return { active:'time-active', recent:'time-recent' }[h] || '';
+}
+
+function renderSystemBar(d) {
+  const sys = d.system || {};
+  const infra = d.infrastructure || {};
+  const load = (sys.loadAvg || [])[0] || 0;
+  const loadColor = load > 8 ? 'var(--red)' : load > 4 ? 'var(--orange)' : 'var(--green)';
+  const memPct = sys.memPercent || 0;
+  const memColor = memPct > 85 ? 'var(--red)' : memPct > 65 ? 'var(--orange)' : 'var(--green)';
+  const diskPct = parseInt(sys.diskPercent) || 0;
+  const diskColor = diskPct > 85 ? 'var(--red)' : diskPct > 65 ? 'var(--orange)' : 'var(--green)';
+  const projects = d.projects || {};
+  const activeCount = Object.values(projects).filter(p => p.health === 'active').length;
+  const totalCount = Object.keys(projects).length;
+
+  document.getElementById('system-bar').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">CPU Load</div>
+      <div class="metric-value" style="color:${loadColor}">${load}</div>
+      <div class="metric-sub">${(sys.loadAvg || []).join(' / ')}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Memory</div>
+      <div class="metric-value" style="color:${memColor}">${memPct}%</div>
+      <div class="metric-sub">${s(sys.memUsedGB,0)}/${s(sys.memTotalGB,0)} GB</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Disk</div>
+      <div class="metric-value" style="color:${diskColor}">${s(sys.diskPercent,'—')}</div>
+      <div class="metric-sub">${s(sys.diskUsed,'?')} / ${s(sys.diskTotal,'?')}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Projects</div>
+      <div class="metric-value" style="color:var(--cyan)">${totalCount}</div>
+      <div class="metric-sub">${activeCount} active today</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Host</div>
+      <div class="metric-value" style="color:var(--text); font-size:1rem">${s(infra.host)}</div>
+      <div class="metric-sub">${s(infra.os)} · ${s(infra.arch)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Uptime</div>
+      <div class="metric-value" style="color:var(--text); font-size:0.85rem">${s(d.uptime,'—')}</div>
+      <div class="metric-sub">${s(d.hostname)}</div>
+    </div>
+  `;
+}
+
+function renderGardenHero(d) {
+  const g = d.garden || {};
+  if (!g.version) {
+    document.getElementById('garden-hero').innerHTML = '<div style="color:var(--text-dim)">Garden data unavailable</div>';
+    return;
+  }
+  document.getElementById('garden-hero').innerHTML = `
+    <div>
+      <div class="garden-hero-title">AI GARDEN — CIVILIZATION</div>
+      <div class="garden-stats-grid">
+        <div class="garden-stat">
+          <div class="garden-stat-value" style="color:var(--cyan)">${g.citizens}</div>
+          <div class="garden-stat-label">Citizens</div>
+        </div>
+        <div class="garden-stat">
+          <div class="garden-stat-value" style="color:var(--green)">${g.plants}</div>
+          <div class="garden-stat-label">Plants</div>
+        </div>
+        <div class="garden-stat">
+          <div class="garden-stat-value" style="color:var(--purple)">${s(g.factions,0)}</div>
+          <div class="garden-stat-label">Factions</div>
+        </div>
+        <div class="garden-stat">
+          <div class="garden-stat-value" style="color:var(--red)">${s(g.threats,0)}</div>
+          <div class="garden-stat-label">Threats</div>
+        </div>
+        <div class="garden-stat">
+          <div class="garden-stat-value" style="color:var(--orange)">${s(g.structures,0)}</div>
+          <div class="garden-stat-label">Structures</div>
+        </div>
+        <div class="garden-stat">
+          <div class="garden-stat-value" style="color:var(--text-dim)">${s(g.events,0)}</div>
+          <div class="garden-stat-label">Events</div>
+        </div>
+      </div>
+      <div class="garden-links">
+        <a href="https://juliosuas.github.io/ai-garden/" target="_blank">Live Garden</a>
+        <a href="https://github.com/juliosuas/ai-garden" target="_blank">GitHub</a>
+      </div>
+    </div>
+    <div class="garden-version">v${g.version}</div>
+  `;
+}
+
+function renderMainGrid(d) {
+  const projects = d.projects || {};
+  const crons = d.crons || [];
+  const tokens = d.tokens || {};
+  const infra = d.infrastructure || {};
+
+  // Sort projects: active first, then recent, then stale
+  const order = { active: 0, recent: 1, stale: 2 };
+  const sorted = Object.entries(projects).sort((a, b) => (order[a[1].health]||9) - (order[b[1].health]||9));
+
+  // Projects panel
+  let projectsHtml = `<div class="panel panel-full">
+    <div class="panel-title">PROJECTS <span class="count">${sorted.length} repos</span></div>`;
+  for (const [name, p] of sorted) {
+    projectsHtml += `
+      <div class="project-row">
+        <div class="health-dot ${healthClass(p.health)}"></div>
+        <div class="project-name">${name}<span class="branch">${s(p.branch,'')}</span>${p.dirty ? ` <span class="badge badge-warn">${p.dirty} dirty</span>` : ''}</div>
+        <div class="project-commit">${s(p.lastCommitMsg,'—')}</div>
+        <div class="project-time ${timeClass(p.health)}">${s(p.lastCommitAgo,'—')}</div>
+      </div>`;
+  }
+  projectsHtml += '</div>';
+
+  // Crons panel
+  let cronsHtml = `<div class="panel">
+    <div class="panel-title">CRON JOBS <span class="count">${crons.length}</span></div>`;
+  if (crons.length) {
+    for (const c of crons) {
+      const statusBadge = !c.enabled ? badge('disabled') : c.consecutiveErrors > 0 ? badge('error') : c.lastStatus ? badge(c.lastStatus) : badge('idle');
+      const nextStr = c.nextRun ? new Date(c.nextRun).toLocaleString('es-MX', { timeZone:'America/Mexico_City', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+      const durStr = c.lastDurationMs ? `${Math.round(c.lastDurationMs/1000)}s` : '';
+      cronsHtml += `
+        <div class="cron-row">
+          <div class="cron-name">${s(c.name)} ${statusBadge}</div>
+          <div class="cron-sched">${s(c.schedule)}</div>
+          <div class="cron-next">${durStr ? durStr + ' · ' : ''}next: ${nextStr}</div>
+        </div>`;
+    }
+  } else {
+    cronsHtml += '<div style="color:var(--text-muted);font-size:0.85rem">No cron jobs</div>';
+  }
+  cronsHtml += '</div>';
+
+  // Infrastructure panel
+  let infraHtml = `<div class="panel">
+    <div class="panel-title">CONFIGURATION</div>
+    <div class="info-row"><span class="info-label">AI Model</span><span class="info-value" style="color:var(--cyan)">${s(tokens.model_main)}</span></div>
+    <div class="info-row"><span class="info-label">Cron Model</span><span class="info-value" style="color:var(--purple)">${s(tokens.model_crons)}</span></div>
+    <div class="info-row"><span class="info-label">Plan</span><span class="info-value">${s(tokens.plan)}</span></div>
+    <div class="info-row"><span class="info-label">Promo</span><span class="info-value" style="color:var(--yellow)">${s(tokens.promo)}</span></div>
+    <div class="info-row"><span class="info-label">IP</span><span class="info-value">${s(infra.ip)}</span></div>
+    <div class="info-row"><span class="info-label">Dashboard</span><span class="info-value">:${s(infra.dashboardPort)}</span></div>
+  </div>`;
+
+  document.getElementById('main-grid').innerHTML = projectsHtml + cronsHtml + infraHtml;
 }
 
 async function loadState() {
   try {
-    const r = await fetch('/api/state?t='+Date.now());
-    const s = await r.json();
-    render(s);
-    document.getElementById('last-update').textContent = 'Updated: ' + new Date(s.timestamp).toLocaleTimeString('es-MX');
-  } catch(e) {
-    document.getElementById('last-update').textContent = 'Error loading state';
+    const r = await fetch('/api/state?t=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    lastData = d;
+    renderSystemBar(d);
+    renderGardenHero(d);
+    renderMainGrid(d);
+    document.getElementById('refresh-info').textContent =
+      'Updated ' + new Date(d.timestamp).toLocaleTimeString('es-MX', { timeZone:'America/Mexico_City' });
+  } catch (e) {
+    document.getElementById('refresh-info').textContent = 'Error: ' + e.message;
+    document.getElementById('refresh-info').style.color = 'var(--red)';
+    setTimeout(() => { document.getElementById('refresh-info').style.color = ''; }, 3000);
   }
-}
-
-function safe(val, fallback) {
-  if (val === undefined || val === null || val === '') return fallback !== undefined ? fallback : 'N/A';
-  return val;
-}
-
-function render(s) {
-  try {
-    const g = s.projects?.['ai-garden'] || {};
-    const ab = s.projects?.['airbnb-manager'] || {};
-    const gs = g.stats || {};
-    const infra = s.infrastructure || {};
-    const tokens = s.tokens || {};
-    const tasks = s.tasks || {};
-    
-    let html = '';
-    
-    // Infrastructure
-    html += '<div class="panel"><div class="panel-title">🖥️ INFRASTRUCTURE</div>';
-    html += stat('Host', safe(infra.host));
-    html += stat('Hostname', safe(s.hostname));
-    html += stat('IP', safe(infra.ip));
-    html += stat('OS', safe(infra.os));
-    html += stat('Uptime', safe(s.uptime));
-    html += stat('Model', safe(tokens.model_main), 'cyan');
-    html += stat('Cron Model', safe(tokens.model_crons), 'purple');
-    html += stat('Plan', safe(tokens.plan));
-    html += stat('Promo', safe(tokens.promo), 'yellow');
-    html += stat('Strategy', safe(tokens.optimization));
-    html += '</div>';
-    
-    // AI Garden
-    html += '<div class="panel"><div class="panel-title">🌱 AI GARDEN</div>';
-    html += stat('Plants', safe(gs.plants, 0), 'green');
-    html += stat('Citizens', safe(gs.citizens, 0), 'cyan');
-    html += stat('Factions', safe(gs.factions, 0), 'purple');
-    html += stat('Threats', safe(gs.threats, 0), 'red');
-    html += stat('Events', safe(gs.events, 0));
-    html += stat('Structures', safe(gs.structures, 0));
-    html += stat('Version', gs.version != null ? 'v'+gs.version : 'N/A');
-    html += stat('Open PRs', safe(g.openPRs, 0), (g.openPRs || 0) > 0 ? 'orange' : 'green');
-    html += stat('Branch', safe(g.git?.branch, '-'));
-    if (g.url || g.repo) {
-      html += (g.url ? '<a class="project-link" href="'+g.url+'" target="_blank">🔗 Live Garden</a>' : '');
-      html += (g.url && g.repo ? ' · ' : '');
-      html += (g.repo ? '<a class="project-link" href="'+g.repo+'" target="_blank">GitHub</a>' : '');
-    }
-    html += '</div>';
-    
-    // Airbnb
-    html += '<div class="panel"><div class="panel-title">🏠 AIRBNB MANAGER</div>';
-    html += stat('Status', safe(ab.status), 'cyan');
-    html += stat('Phase', safe(ab.phase, '-'));
-    html += stat('Branch', safe(ab.git?.branch, '-'));
-    html += stat('Last Commit', safe(ab.git?.lastCommit, '-'));
-    if (ab.repo) html += '<a class="project-link" href="'+ab.repo+'" target="_blank">GitHub</a>';
-    html += '</div>';
-    
-    // Active Tasks
-    html += '<div class="panel"><div class="panel-title">🎯 ACTIVE TASKS</div>';
-    for (const t of (tasks.active || [])) {
-      html += '<div class="task"><span class="task-name">'+safe(t.name, 'Untitled')+'</span> '+badge(t.status||t.priority||'active');
-      if (t.detail) html += '<div class="task-detail">'+t.detail+'</div>';
-      html += '</div>';
-    }
-    if (!(tasks.active?.length)) html += '<div style="color:#555;font-size:0.8em">No active tasks</div>';
-    html += '</div>';
-    
-    // Pending
-    html += '<div class="panel"><div class="panel-title">⏳ PENDING</div>';
-    for (const t of (tasks.pending || [])) {
-      html += '<div class="task"><span class="task-name">'+safe(t.name, 'Untitled')+'</span> '+badge(t.status||'pending');
-      if (t.detail) html += '<div class="task-detail">'+t.detail+'</div>';
-      html += '</div>';
-    }
-    if (!(tasks.pending?.length)) html += '<div style="color:#555;font-size:0.8em">No pending tasks</div>';
-    html += '</div>';
-    
-    // Reminders
-    html += '<div class="panel"><div class="panel-title">🔔 REMINDERS</div>';
-    for (const r of (s.reminders || [])) {
-      html += '<div class="reminder">'+safe(r.text)+' · Due: '+safe(r.due)+' '+badge(safe(r.status, 'active'))+'</div>';
-    }
-    if (!(s.reminders?.length)) html += '<div style="color:#555;font-size:0.8em">No reminders</div>';
-    html += '</div>';
-    
-    // Done Today
-    html += '<div class="panel"><div class="panel-title">✅ DONE TODAY</div>';
-    for (const d of (tasks.done_today || [])) {
-      html += '<div class="done-item">'+d+'</div>';
-    }
-    if (!(tasks.done_today?.length)) html += '<div style="color:#555;font-size:0.8em">Nothing yet</div>';
-    html += '</div>';
-    
-    // Crons
-    html += '<div class="panel"><div class="panel-title">⏰ CRON JOBS</div>';
-    if (s.crons && s.crons.length > 0) {
-      for (const c of s.crons) {
-        const nextStr = c.nextRun ? new Date(c.nextRun).toLocaleTimeString('es-MX') : '-';
-        html += '<div class="cron-item">'+safe(c.name)+' '+badge(c.lastStatus||'idle')+' · Next: '+nextStr+'</div>';
-      }
-    } else {
-      html += '<div style="color:#555;font-size:0.8em">No cron jobs configured</div>';
-    }
-    html += '</div>';
-    
-    document.getElementById('dashboard').innerHTML = html;
-  } catch(err) {
-    console.error('Dashboard render error:', err);
-    document.getElementById('dashboard').innerHTML = '<div class="panel"><div class="panel-title">⚠️ RENDER ERROR</div><div style="color:var(--red);font-size:0.85em">'+err.message+'<br>Check console for details.</div></div>';
-  }
-}
-
-function stat(label, value, color) {
-  const cls = color ? 'stat-value '+color : 'stat-value';
-  return '<div class="stat"><span class="stat-label">'+label+'</span><span class="'+cls+'">'+value+'</span></div>';
 }
 
 loadState();
-setInterval(loadState, 30000);
+setInterval(loadState, REFRESH_MS);
 </script>
 </body>
 </html>

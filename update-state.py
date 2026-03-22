@@ -1,35 +1,102 @@
 #!/usr/bin/env python3
-"""Generate state.json for Jeffrey OS Dashboard — run periodically or on demand"""
-import json, subprocess, os, time
+"""Generate state.json for Jeffrey OS Dashboard v5 — real-time system + project data"""
+import json, subprocess, os, time, platform
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 CDT = timezone(timedelta(hours=-6))
 now = datetime.now(CDT)
+
+PROJECTS_DIR = Path.home() / "jeffrey/workspace/projects"
+GARDEN_WORLD_STATE = PROJECTS_DIR / "ai-garden/experiments/world-state.json"
+OUTPUT = PROJECTS_DIR / "jeffrey-os-dashboard/state.json"
 
 def run(cmd, timeout=10):
     try:
         r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
         return r.stdout.strip()
-    except:
+    except Exception:
         return ""
 
+def get_all_projects():
+    """Scan all git projects and return real-time status."""
+    projects = {}
+    if not PROJECTS_DIR.is_dir():
+        return projects
+    for d in sorted(PROJECTS_DIR.iterdir()):
+        if not d.is_dir() or not (d / ".git").exists():
+            continue
+        name = d.name
+        if name == "jeffrey-os-dashboard":
+            continue  # skip self
+        raw = run(f"cd '{d}' && git log --format='%H|%s|%aI|%ar' -1 2>/dev/null")
+        parts = raw.split("|", 3) if raw else []
+        branch = run(f"cd '{d}' && git branch --show-current 2>/dev/null")
+        dirty = run(f"cd '{d}' && git status --porcelain 2>/dev/null")
+        commit_iso = parts[2] if len(parts) > 2 else ""
+        # Determine health: green (<24h), yellow (<7d), red (>7d)
+        health = "stale"
+        if commit_iso:
+            try:
+                commit_dt = datetime.fromisoformat(commit_iso)
+                age_hours = (now - commit_dt).total_seconds() / 3600
+                if age_hours < 24:
+                    health = "active"
+                elif age_hours < 168:
+                    health = "recent"
+                else:
+                    health = "stale"
+            except Exception:
+                pass
+        projects[name] = {
+            "branch": branch or "unknown",
+            "lastCommitHash": parts[0][:8] if parts else "",
+            "lastCommitMsg": parts[1] if len(parts) > 1 else "",
+            "lastCommitTime": commit_iso,
+            "lastCommitAgo": parts[3] if len(parts) > 3 else "",
+            "dirty": len(dirty.splitlines()) if dirty else 0,
+            "health": health,
+        }
+    return projects
+
 def get_crons():
-    raw = run("openclaw cron list --json 2>/dev/null")
+    raw = run("openclaw cron list --json 2>/dev/null", timeout=8)
     if not raw:
         return []
     try:
         data = json.loads(raw)
-        if isinstance(data, list):
-            return [{"name": c.get("name",""), "schedule": c.get("description",""), "enabled": c.get("enabled",True), "lastStatus": c.get("state",{}).get("lastStatus",""), "nextRun": c.get("state",{}).get("nextRunAtMs",0)} for c in data]
-    except:
-        pass
-    return []
+        jobs = data if isinstance(data, list) else data.get("jobs", [])
+        result = []
+        for c in jobs:
+            sched = c.get("schedule", {})
+            state = c.get("state", {})
+            sched_str = ""
+            if sched.get("kind") == "every":
+                mins = sched.get("everyMs", 0) // 60000
+                if mins >= 60:
+                    sched_str = f"every {mins // 60}h"
+                else:
+                    sched_str = f"every {mins}m"
+            elif sched.get("kind") == "at":
+                sched_str = f"once @ {sched.get('at', '?')}"
+            result.append({
+                "name": c.get("name", ""),
+                "description": c.get("description", ""),
+                "schedule": sched_str,
+                "enabled": c.get("enabled", True),
+                "lastStatus": state.get("lastStatus", ""),
+                "lastDurationMs": state.get("lastDurationMs", 0),
+                "nextRun": state.get("nextRunAtMs", 0),
+                "consecutiveErrors": state.get("consecutiveErrors", 0),
+            })
+        return result
+    except Exception:
+        return []
 
 def get_garden_stats():
     try:
-        ws_path = os.path.expanduser("~/jeffrey/workspace/projects/ai-garden/experiments/world-state.json")
-        with open(ws_path) as f:
+        with open(GARDEN_WORLD_STATE) as f:
             d = json.load(f)
         return {
             "plants": len(d.get("plants", [])),
@@ -39,112 +106,101 @@ def get_garden_stats():
             "events": len(d.get("events", [])),
             "version": d.get("version", 0),
             "structures": len(d.get("structuresBuilt", [])),
+            "lastUpdated": d.get("lastUpdated", ""),
         }
-    except:
+    except Exception:
         return {}
 
-def get_git_status(repo_path):
+def get_system_metrics():
+    """CPU load, memory, disk."""
+    metrics = {}
+    # Load averages
     try:
-        # Single git command for both branch and last commit
-        raw = run(f"cd {repo_path} && git log --oneline -1 && echo '---SPLIT---' && git branch --show-current")
-        parts = raw.split('---SPLIT---')
-        return {"lastCommit": parts[0].strip() if len(parts) > 0 else "", "branch": parts[1].strip() if len(parts) > 1 else ""}
-    except:
-        return {}
+        load = os.getloadavg()
+        metrics["loadAvg"] = [round(x, 2) for x in load]
+    except Exception:
+        metrics["loadAvg"] = []
+    # Memory via vm_stat (macOS)
+    vm = run("vm_stat 2>/dev/null")
+    if vm:
+        try:
+            lines = vm.splitlines()
+            page_size = 16384  # default Apple Silicon
+            stats = {}
+            for line in lines[1:]:
+                if ":" in line:
+                    key, val = line.split(":", 1)
+                    val = val.strip().rstrip(".")
+                    try:
+                        stats[key.strip()] = int(val)
+                    except ValueError:
+                        pass
+            free_pages = stats.get("Pages free", 0) + stats.get("Pages speculative", 0)
+            active = stats.get("Pages active", 0)
+            inactive = stats.get("Pages inactive", 0)
+            wired = stats.get("Pages wired down", 0)
+            compressed = stats.get("Pages occupied by compressor", 0)
+            total_used = (active + wired + compressed) * page_size
+            total_free = (free_pages + inactive) * page_size
+            total = total_used + total_free
+            metrics["memUsedGB"] = round(total_used / (1024**3), 1)
+            metrics["memTotalGB"] = round(total / (1024**3), 1)
+            metrics["memPercent"] = round(total_used / total * 100, 1) if total else 0
+        except Exception:
+            pass
+    # Disk
+    disk = run("df -h / 2>/dev/null | tail -1")
+    if disk:
+        parts = disk.split()
+        if len(parts) >= 5:
+            metrics["diskTotal"] = parts[1]
+            metrics["diskUsed"] = parts[2]
+            metrics["diskAvail"] = parts[3]
+            metrics["diskPercent"] = parts[4]
+    return metrics
 
-def get_pr_count():
-    try:
-        raw = run("cd ~/jeffrey/workspace/projects/ai-garden && gh pr list --json number 2>/dev/null", timeout=5)
-        return len(json.loads(raw)) if raw else 0
-    except:
-        return 0
+def get_uptime():
+    raw = run("uptime")
+    return raw
 
-# Build state — parallelize slow subprocess calls
-with ThreadPoolExecutor(max_workers=5) as pool:
-    f_uptime = pool.submit(run, "uptime -p 2>/dev/null || uptime")
-    f_hostname = pool.submit(run, "hostname")
-    f_git_garden = pool.submit(get_git_status, os.path.expanduser("~/jeffrey/workspace/projects/ai-garden"))
-    f_git_airbnb = pool.submit(get_git_status, os.path.expanduser("~/jeffrey/workspace/projects/airbnb-manager"))
-    f_prs = pool.submit(get_pr_count)
+# Build state — parallelize
+with ThreadPoolExecutor(max_workers=6) as pool:
+    f_projects = pool.submit(get_all_projects)
     f_crons = pool.submit(get_crons)
-    f_garden_stats = pool.submit(get_garden_stats)
+    f_garden = pool.submit(get_garden_stats)
+    f_metrics = pool.submit(get_system_metrics)
+    f_uptime = pool.submit(get_uptime)
+    f_hostname = pool.submit(run, "hostname")
 
 state = {
     "timestamp": now.isoformat(),
-    "uptime": f_uptime.result(),
     "hostname": f_hostname.result(),
-    
-    "projects": {
-        "ai-garden": {
-            "status": "active",
-            "git": f_git_garden.result(),
-            "stats": f_garden_stats.result(),
-            "openPRs": f_prs.result(),
-            "url": "https://juliosuas.github.io/ai-garden/",
-            "repo": "https://github.com/juliosuas/ai-garden",
-        },
-        "airbnb-manager": {
-            "status": "building-mvp",
-            "git": f_git_airbnb.result(),
-            "phase": "Phase 1: Multi-tenant foundation",
-            "repo": "https://github.com/juliosuas/airbnb-manager",
-        },
-        "fairwaycircle": {
-            "status": "active",
-            "detail": "Fairway Circle project",
-        },
-    },
-
-    "tasks": {
-        "active": [
-            {"name": "AI Garden Civilization", "status": "building", "priority": "high", "detail": "Step-by-step implementation via cron every 30min"},
-            {"name": "Airbnb Manager MVP", "status": "building", "priority": "high", "detail": "Multi-tenant, auth, iCal, landing page"},
-            {"name": "Garden Camera Fix", "status": "done", "detail": "Reverted to stable, rebuilding carefully"},
-        ],
-        "pending": [
-            {"name": "Lovable → GitHub sync", "status": "blocked", "detail": "Browser was down, needs UI access"},
-            {"name": "Dashboard público (internet)", "status": "pending", "detail": "Needs auth before exposing"},
-            {"name": "Cobrar página web $15k", "detail": "Hija de Añorve Baños"},
-        ],
-        "done_today": [
-            "PR #4-#13 merged (AI Garden)",
-            "Civilization world-state v7",
-            "Garden reverted to stable",
-            "Airbnb audit complete",
-            "README + one-command contribution",
-            "Outreach in 3 GitHub communities",
-            "Cron configured (garden 30min)",
-            "Token optimization (Sonnet for crons)",
-        ],
-    },
-
-    "reminders": [
-        {"text": "Palacio de Hierro $1,915 MXN", "due": "2026-03-20", "status": "paid"},
-        {"text": "2x tokens promo ends", "due": "2026-03-27", "status": "active"},
-    ],
-
+    "uptime": f_uptime.result(),
+    "system": f_metrics.result(),
+    "garden": f_garden.result(),
+    "projects": f_projects.result(),
     "crons": f_crons.result(),
-
+    "infrastructure": {
+        "host": "Mac mini M4",
+        "ip": "192.168.1.66",
+        "os": f"macOS {platform.mac_ver()[0]}",
+        "arch": platform.machine(),
+        "dashboardPort": 8080,
+    },
     "tokens": {
         "plan": "Claude Max 5x",
         "promo": "2x until March 27",
         "model_main": "claude-opus-4-6",
         "model_crons": "claude-sonnet-4",
-        "optimization": "Sonnet for routine tasks, Opus for complex builds",
-    },
-
-    "infrastructure": {
-        "host": "Mac mini M4",
-        "ip": "192.168.1.66",
-        "os": "macOS (Darwin arm64)",
-        "dashboardPort": 8080,
     },
 }
 
-# Write state
-out_path = os.path.expanduser("~/jeffrey/workspace/projects/jeffrey-os-dashboard/state.json")
-with open(out_path, "w") as f:
+with open(OUTPUT, "w") as f:
     json.dump(state, f, indent=2, ensure_ascii=False)
 
+gs = state["garden"]
+proj_count = len(state["projects"])
+active_count = sum(1 for p in state["projects"].values() if p["health"] == "active")
 print(f"State updated: {now.strftime('%Y-%m-%d %H:%M:%S')} CDT")
-print(f"Garden: {state['projects']['ai-garden']['stats'].get('plants',0)} plants, {state['projects']['ai-garden']['stats'].get('citizens',0)} citizens")
+print(f"Projects: {proj_count} total, {active_count} active today")
+print(f"Garden: v{gs.get('version',0)} | {gs.get('citizens',0)} citizens, {gs.get('plants',0)} plants")
