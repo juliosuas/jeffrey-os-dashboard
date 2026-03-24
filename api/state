@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+"""Jeffrey OS Dashboard — Live State API"""
+import json, subprocess, os, time, re
+from http.server import BaseHTTPRequestHandler
+from datetime import datetime, timezone
+
+def run(cmd, timeout=5):
+    try:
+        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
+        return r.stdout.strip()
+    except: return ""
+
+def get_uptime():
+    raw = run("uptime")
+    m = re.search(r'up\s+(.+?),\s+\d+\s+user', raw)
+    return m.group(1).strip() if m else run("uptime | awk '{print $3,$4}'").rstrip(',')
+
+def get_projects():
+    projects = {}
+    base = os.path.expanduser("~/jeffrey/workspace/projects")
+    for d in sorted(os.listdir(base)):
+        path = os.path.join(base, d)
+        if not os.path.isdir(os.path.join(path, ".git")): continue
+        branch = run(f"cd {path} && git branch --show-current")
+        dirty = run(f"cd {path} && git status --porcelain | wc -l").strip()
+        last_msg = run(f"cd {path} && git log -1 --format='%s' 2>/dev/null")
+        last_time = run(f"cd {path} && git log -1 --format='%ar' 2>/dev/null")
+        last_iso = run(f"cd {path} && git log -1 --format='%aI' 2>/dev/null")
+        # health
+        try:
+            secs_ago = int(run(f"cd {path} && echo $(( $(date +%s) - $(git log -1 --format='%at') ))"))
+            health = "active" if secs_ago < 86400 else "recent" if secs_ago < 604800 else "stale"
+        except: health = "stale"
+        projects[d] = {
+            "branch": branch or "main",
+            "dirty": int(dirty) if dirty.isdigit() else 0,
+            "lastCommitMsg": last_msg[:80] if last_msg else "—",
+            "lastCommitAgo": last_time or "—",
+            "lastCommitTime": last_iso or "",
+            "health": health
+        }
+    return projects
+
+def get_crons():
+    raw = run("openclaw cron list --json 2>/dev/null") or run("openclaw cron list 2>/dev/null")
+    if not raw: return []
+    try:
+        crons = json.loads(raw)
+        return crons if isinstance(crons, list) else []
+    except:
+        # Parse text output
+        lines = [l.strip() for l in raw.split('\n') if l.strip() and not l.startswith('─') and not l.startswith('Name')]
+        result = []
+        for line in lines:
+            parts = re.split(r'\s{2,}', line)
+            if len(parts) >= 2:
+                result.append({"name": parts[0], "schedule": parts[1] if len(parts)>1 else "", "enabled": True, "lastStatus": "ok"})
+        return result
+
+def get_state():
+    cpu = run("top -l 1 | grep 'CPU usage' | awk '{print $3}'") or "—"
+    mem_raw = run("memory_pressure | head -1")
+    mem = re.search(r'(\d+)%', mem_raw)
+    mem_pct = f"{100 - int(mem.group(1))}%" if mem else run("ps -A -o %mem | awk '{s+=$1} END {printf \"%.0f%%\",s}'") or "—"
+    disk = run("df -h / | tail -1 | awk '{print $5}'") or "—"
+    
+    # Garden
+    garden_path = os.path.expanduser("~/jeffrey/workspace/projects/ai-garden")
+    plant_count = run(f"ls {garden_path}/garden/plants/*.json 2>/dev/null | wc -l").strip() if os.path.isdir(garden_path) else "0"
+    visitors = run(f"ls {garden_path}/garden/visitors/*.json 2>/dev/null | wc -l").strip() if os.path.isdir(garden_path) else "0"
+    
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "system": {
+            "hostname": run("hostname"),
+            "uptime": get_uptime(),
+            "cpu": cpu,
+            "memory": mem_pct,
+            "disk": disk,
+            "os": run("sw_vers -productName 2>/dev/null") + " " + run("sw_vers -productVersion 2>/dev/null"),
+            "chip": run("sysctl -n machdep.cpu.brand_string 2>/dev/null") or "Apple Silicon"
+        },
+        "garden": {
+            "version": "6.0",
+            "plants": int(plant_count) if plant_count.isdigit() else 0,
+            "visitors": int(visitors) if visitors.isdigit() else 0,
+            "health": "thriving",
+            "repo": "juliosuas/ai-garden",
+            "url": "https://juliosuas.github.io/ai-garden"
+        },
+        "projects": get_projects(),
+        "crons": get_crons(),
+        "tokens": {
+            "model_main": "claude-opus-4-6",
+            "model_crons": "claude-opus-4-6",
+            "plan": "OpenClaw Pro",
+            "promo": "Active"
+        },
+        "infrastructure": {
+            "ip": run("curl -s ifconfig.me 2>/dev/null") or "—",
+            "dashboardPort": "8090"
+        }
+    }
+
+if __name__ == "__main__":
+    print(json.dumps(get_state(), indent=2))
