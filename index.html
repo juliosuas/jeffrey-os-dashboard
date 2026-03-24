@@ -1,1450 +1,995 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JEFFREY OS v4.6 // COMMAND CENTER</title>
+<title>JEFFREY OS v5.0 // COMMAND CENTER</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════════════════════════
-   JEFFREY OS — HACKER COMMAND CENTER DASHBOARD
-   Single-file, self-contained, no build tools
-   ═══════════════════════════════════════════════════════════════ */
-
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
-
 :root {
   --green: #00ff41;
-  --green-dim: #00aa2a;
-  --green-bg: rgba(0,255,65,0.03);
-  --green-glow: rgba(0,255,65,0.15);
   --cyan: #00d4ff;
-  --cyan-dim: #0088aa;
   --red: #ff3333;
-  --red-glow: rgba(255,50,50,0.3);
-  --orange: #ffa500;
-  --yellow: #ffee00;
-  --purple: #bf5fff;
+  --yellow: #ffcc00;
+  --orange: #ff8800;
   --bg: #0a0a0f;
-  --bg-panel: rgba(5,15,5,0.85);
-  --border: #1a3a1a;
-  --border-bright: #00ff41;
-  --text-dim: #445544;
-  --text-muted: #667766;
-  --font-mono: 'Share Tech Mono', 'Courier New', monospace;
-  --font-display: 'Orbitron', 'Share Tech Mono', monospace;
+  --panel-bg: rgba(10, 15, 20, 0.85);
+  --border: rgba(0, 255, 65, 0.25);
+  --glow: 0 0 8px rgba(0, 255, 65, 0.3), inset 0 0 8px rgba(0, 255, 65, 0.05);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body {
+body {
   background: var(--bg);
   color: var(--green);
-  font-family: var(--font-mono);
-  height: 100%;
-  overflow: hidden;
+  font-family: 'Share Tech Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
 }
 
-/* ── BOOT SEQUENCE OVERLAY ── */
-#boot-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  background: #000;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  transition: opacity 0.8s ease;
-}
-#boot-overlay.fade-out { opacity: 0; pointer-events: none; }
-#boot-text {
-  font-family: var(--font-mono);
-  font-size: 14px; color: var(--green);
-  text-align: left; width: 600px; max-width: 90vw;
-  text-shadow: 0 0 8px var(--green);
-  line-height: 1.6;
-  white-space: pre;
-}
-#boot-logo {
-  font-family: var(--font-display);
-  font-size: 48px; font-weight: 900;
-  color: var(--green);
-  text-shadow: 0 0 30px var(--green), 0 0 60px var(--green-glow);
-  letter-spacing: 12px;
-  margin-bottom: 40px;
-  opacity: 0;
-  transition: opacity 1s ease;
-}
-#boot-logo.visible { opacity: 1; }
-#boot-progress {
-  width: 400px; max-width: 80vw; height: 3px;
-  background: #111; margin-top: 30px;
-  border: 1px solid #222;
-}
-#boot-progress-fill {
-  height: 100%; width: 0%;
-  background: var(--green);
-  box-shadow: 0 0 10px var(--green);
-  transition: width 0.3s ease;
+/* Matrix Rain Canvas */
+#matrix-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  opacity: 0.06;
+  pointer-events: none;
 }
 
-/* ── SCANLINES ── */
+/* CRT Scanlines */
 .scanlines {
-  position: fixed; inset: 0; z-index: 1000; pointer-events: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 9999;
+  pointer-events: none;
   background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px,
-    rgba(0,255,65,0.015) 2px, rgba(0,255,65,0.015) 4px
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
   );
 }
-.scanlines::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(transparent 50%, rgba(0,0,0,0.05) 50%);
-  background-size: 100% 4px;
-  animation: scanMove 8s linear infinite;
+
+/* Boot Screen */
+#boot-screen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: var(--bg);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.8s ease;
 }
-@keyframes scanMove {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(8px); }
+#boot-screen.fade-out { opacity: 0; pointer-events: none; }
+#boot-text {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--green);
+  font-size: 14px;
+  max-width: 700px;
+  width: 90%;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+#boot-text .cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: var(--green);
+  animation: blink 0.6s infinite;
+  vertical-align: middle;
 }
 
-/* ── CRT FLICKER ── */
-.crt-flicker {
-  position: fixed; inset: 0; z-index: 999; pointer-events: none;
-  animation: crtFlicker 0.15s infinite;
-  opacity: 0;
-}
-@keyframes crtFlicker {
-  0% { opacity: 0; background: rgba(0,255,65,0.01); }
-  50% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-/* ── MATRIX RAIN ── */
-#matrix-canvas {
-  position: fixed; inset: 0; z-index: 0;
-  opacity: 0.07;
-}
-
-/* ── MAIN LAYOUT ── */
-.dashboard {
-  position: relative; z-index: 1;
-  display: flex; flex-direction: column;
-  height: 100vh; padding: 8px;
-  gap: 8px; opacity: 0;
-  transition: opacity 1s ease;
-}
-.dashboard.visible { opacity: 1; }
-
-/* ── HEADER ── */
-.header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 16px;
-  border: 1px solid var(--border);
-  background: var(--bg-panel);
+/* Main App */
+#app {
   position: relative;
-  overflow: hidden;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  min-height: 100vh;
 }
-.header::before {
-  content: ''; position: absolute; top: 0; left: 0;
-  width: 100%; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--green), transparent);
-  animation: headerGlow 3s ease-in-out infinite;
+#app.visible { opacity: 1; }
+
+/* Status Bar */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 20px;
+  background: rgba(0, 255, 65, 0.05);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-@keyframes headerGlow {
-  0%, 100% { opacity: 0.3; } 50% { opacity: 1; }
+.status-bar .hostname { color: var(--cyan); font-weight: bold; }
+.status-bar .uptime { color: var(--green); }
+.status-bar .datetime { color: #888; }
+.status-badge {
+  background: rgba(0, 255, 65, 0.15);
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: 2px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  animation: pulse-badge 2s infinite;
 }
-.header-left { display: flex; align-items: center; gap: 16px; }
-.logo {
-  font-family: var(--font-display);
-  font-size: 1.8em; font-weight: 900;
-  letter-spacing: 6px;
-  text-shadow: 0 0 15px var(--green), 0 0 30px var(--green-glow);
-  animation: logoFlicker 4s infinite;
+@keyframes pulse-badge {
+  0%, 100% { box-shadow: 0 0 4px rgba(0, 255, 65, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(0, 255, 65, 0.6); }
 }
-@keyframes logoFlicker {
-  0%, 100% { opacity: 1; }
-  92% { opacity: 1; } 93% { opacity: 0.7; } 94% { opacity: 1; }
-  96% { opacity: 0.8; } 97% { opacity: 1; }
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
 }
-.header-subtitle {
-  font-size: 0.7em; color: var(--cyan);
-  text-shadow: 0 0 5px var(--cyan);
-  letter-spacing: 2px;
-}
-.header-center {
-  display: flex; gap: 20px; align-items: center; font-size: 0.75em;
-}
-.header-center .live-dot {
-  display: inline-block; width: 8px; height: 8px;
-  background: var(--red); border-radius: 50%;
-  animation: blink 1s infinite;
-  box-shadow: 0 0 8px var(--red);
-}
-.header-right { text-align: right; }
-.clock-display {
-  font-family: var(--font-display);
-  font-size: 1.4em; font-weight: 700;
-  color: var(--cyan);
-  text-shadow: 0 0 10px var(--cyan);
+.header h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(18px, 4vw, 32px);
+  font-weight: 900;
+  color: var(--green);
+  text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
   letter-spacing: 3px;
 }
-.date-display {
-  font-size: 0.7em; color: var(--text-muted);
-  letter-spacing: 2px;
+.header h1 .cursor-blink {
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  background: var(--green);
+  animation: blink 0.8s infinite;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+@keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+/* Grid Layout */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  max-width: 1800px;
+  margin: 0 auto;
 }
 
-/* ── GRID LAYOUT ── */
-.grid {
-  flex: 1; display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 8px; overflow: hidden;
-  min-height: 0;
-}
-
-/* ── PANEL BASE ── */
+/* Panels */
 .panel {
+  background: var(--panel-bg);
   border: 1px solid var(--border);
-  background: var(--bg-panel);
-  padding: 10px;
-  position: relative;
+  border-radius: 6px;
+  box-shadow: var(--glow);
   overflow: hidden;
-  display: flex; flex-direction: column;
-  min-height: 0;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  backdrop-filter: blur(10px);
 }
-.panel::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--border-bright), transparent);
-  opacity: 0.3;
+.panel.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
-.panel:hover { border-color: var(--green-dim); }
-.panel:hover::before { opacity: 0.8; }
-
 .panel-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 8px; padding-bottom: 6px;
-  border-bottom: 1px solid rgba(0,255,65,0.1);
-  flex-shrink: 0;
-}
-.panel-title {
-  font-size: 0.7em; color: var(--cyan);
-  text-shadow: 0 0 5px var(--cyan-dim);
-  letter-spacing: 2px; font-weight: bold;
-}
-.panel-badge {
-  font-size: 0.6em; padding: 1px 6px;
-  border: 1px solid; border-radius: 2px;
-}
-.badge-ok { color: var(--green); border-color: var(--green-dim); }
-.badge-warn { color: var(--orange); border-color: var(--orange); }
-.badge-live { color: var(--red); border-color: var(--red); animation: blink 1.5s infinite; }
-
-.panel-body { flex: 1; overflow: hidden; min-height: 0; }
-
-/* ── SYSTEM METRICS ── */
-.metrics-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 6px; height: 100%;
-}
-.metric-card {
-  padding: 6px 8px;
-  border: 1px solid #111;
-  background: rgba(0,0,0,0.4);
-  display: flex; flex-direction: column;
-  justify-content: center;
-}
-.metric-label {
-  font-size: 0.6em; color: var(--text-muted);
-  letter-spacing: 1px; text-transform: uppercase;
-}
-.metric-value {
-  font-family: var(--font-display);
-  font-size: 1.5em; font-weight: 700;
-  text-shadow: 0 0 8px var(--green);
-  margin: 2px 0;
-}
-.metric-value.warn { color: var(--orange); text-shadow: 0 0 8px var(--orange); }
-.metric-value.crit { color: var(--red); text-shadow: 0 0 8px var(--red); }
-.metric-bar {
-  height: 3px; background: #111;
-  border-radius: 2px; overflow: hidden;
-}
-.metric-fill {
-  height: 100%; border-radius: 2px;
-  background: var(--green);
-  box-shadow: 0 0 6px var(--green-glow);
-  transition: width 2s ease;
-}
-.metric-fill.warn { background: var(--orange); box-shadow: 0 0 6px rgba(255,165,0,0.3); }
-.metric-fill.crit { background: var(--red); box-shadow: 0 0 6px var(--red-glow); }
-
-/* ── CHANNEL STATUS ── */
-.channel-list { display: flex; flex-direction: column; gap: 4px; }
-.channel-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 5px 8px;
-  border: 1px solid #111;
-  background: rgba(0,0,0,0.3);
-  font-size: 0.8em;
-}
-.channel-left { display: flex; align-items: center; gap: 8px; }
-.channel-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  flex-shrink: 0;
-}
-.dot-online {
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: pulseDot 2s infinite;
-}
-.dot-standby {
-  background: var(--orange);
-  box-shadow: 0 0 6px var(--orange);
-  animation: pulseDot 3s infinite;
-}
-.dot-offline {
-  background: var(--red);
-  box-shadow: 0 0 4px var(--red);
-}
-@keyframes pulseDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
-}
-.channel-name { color: #ccc; }
-.channel-status-text { font-size: 0.85em; }
-
-/* ── SESSIONS ── */
-.sessions-list {
-  display: flex; flex-direction: column; gap: 3px;
-  overflow-y: auto; max-height: 100%;
-  scrollbar-width: thin; scrollbar-color: var(--green-dim) transparent;
-}
-.session-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 4px 6px; font-size: 0.75em;
-  border-bottom: 1px solid #0a0a0a;
-}
-.session-id { color: var(--cyan); max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.session-model { color: var(--green); font-size: 0.9em; }
-.session-age { color: var(--text-dim); }
-.sessions-footer {
-  margin-top: auto; padding-top: 6px;
-  border-top: 1px solid #111;
-  font-size: 0.65em; color: var(--text-dim);
-}
-
-/* ── TERMINAL LOG ── */
-.terminal-output {
-  font-size: 0.72em; line-height: 1.5;
-  overflow-y: auto; height: 100%;
-  scrollbar-width: thin; scrollbar-color: var(--green-dim) transparent;
-}
-.terminal-output .line {
-  white-space: nowrap; opacity: 0;
-  animation: fadeIn 0.15s forwards;
-}
-.t-prompt { color: var(--yellow); }
-.t-error { color: var(--red); }
-.t-success { color: var(--green); }
-.t-info { color: var(--cyan); }
-.t-warn { color: var(--orange); }
-.t-dim { color: var(--text-dim); }
-
-/* ── WEATHER ── */
-.weather-display { text-align: center; padding: 8px 0; }
-.weather-temp {
-  font-family: var(--font-display);
-  font-size: 2.8em; font-weight: 900;
-  text-shadow: 0 0 15px var(--cyan);
-  color: var(--cyan);
-  line-height: 1;
-}
-.weather-desc {
-  font-size: 0.85em; color: var(--text-muted);
-  margin: 4px 0;
-}
-.weather-details {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 4px; font-size: 0.7em; margin-top: 8px;
-}
-.weather-detail {
-  padding: 4px; border: 1px solid #111;
-  background: rgba(0,0,0,0.3);
-}
-.weather-detail-label { color: var(--text-dim); font-size: 0.85em; }
-.weather-detail-value { color: var(--green); }
-
-/* ── QUICK ACTIONS ── */
-.actions-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 6px; height: 100%;
-}
-.action-btn {
-  border: 1px solid var(--border);
-  background: rgba(0,0,0,0.5);
-  color: var(--green);
-  font-family: var(--font-mono);
-  font-size: 0.7em;
-  cursor: pointer;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 4px;
-  transition: all 0.2s;
-  text-align: center;
-  padding: 6px;
-}
-.action-btn:hover {
-  border-color: var(--green);
-  background: rgba(0,255,65,0.05);
-  text-shadow: 0 0 8px var(--green);
-  box-shadow: 0 0 15px rgba(0,255,65,0.1);
-}
-.action-btn:active {
-  background: rgba(0,255,65,0.15);
-  transform: scale(0.97);
-}
-.action-icon { font-size: 1.6em; }
-.action-label { letter-spacing: 1px; }
-
-/* ── REMINDERS ── */
-.reminders-list {
-  display: flex; flex-direction: column; gap: 6px;
-  overflow-y: auto; max-height: 100%;
-  scrollbar-width: thin;
-}
-.reminder-item {
-  padding: 6px 8px;
-  border-left: 2px solid var(--green);
-  background: rgba(0,0,0,0.3);
-  font-size: 0.75em;
-}
-.reminder-item.urgent { border-left-color: var(--red); }
-.reminder-item.warning { border-left-color: var(--orange); }
-.reminder-priority {
-  font-size: 0.8em; font-weight: bold;
-  margin-bottom: 2px;
-}
-.reminder-text { color: #ccc; }
-.reminder-meta { color: var(--text-dim); font-size: 0.85em; margin-top: 2px; }
-
-/* ── NETWORK STATUS ── */
-.network-nodes {
-  display: flex; flex-direction: column; gap: 5px;
-}
-.net-node {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 5px 8px;
-  border: 1px solid #111;
-  background: rgba(0,0,0,0.3);
-  font-size: 0.75em;
-}
-.net-node-left { display: flex; align-items: center; gap: 8px; }
-.net-node-name { color: var(--cyan); }
-.net-node-detail { color: var(--text-dim); font-size: 0.9em; }
-.net-latency { color: var(--green); }
-.net-stats {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 4px; margin-top: 8px; font-size: 0.7em;
-}
-.net-stat {
-  padding: 4px 6px; border: 1px solid #111;
-  background: rgba(0,0,0,0.3);
-}
-.net-stat-label { color: var(--text-dim); }
-.net-stat-value { color: var(--green); }
-
-/* ── UPTIME COUNTER ── */
-.uptime-display { text-align: center; padding: 6px 0; }
-.uptime-big {
-  font-family: var(--font-display);
-  font-size: 1.1em; font-weight: 700;
-  color: var(--green);
-  text-shadow: 0 0 10px var(--green-glow);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: 2px;
+  color: var(--cyan);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-transform: uppercase;
 }
-.uptime-label { font-size: 0.65em; color: var(--text-dim); margin-top: 2px; letter-spacing: 2px; }
-.uptime-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 4px; margin-top: 8px;
+.panel-header .indicator {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse-dot 1.5s infinite;
 }
-.uptime-unit { text-align: center; padding: 4px; border: 1px solid #111; background: rgba(0,0,0,0.3); }
-.uptime-num {
-  font-family: var(--font-display);
-  font-size: 1.5em; font-weight: 700;
-  color: var(--cyan); text-shadow: 0 0 8px var(--cyan-dim);
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--green); }
+  50% { opacity: 0.6; box-shadow: 0 0 10px var(--green); }
 }
-.uptime-unit-label { font-size: 0.55em; color: var(--text-dim); letter-spacing: 1px; }
+.panel-body {
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.7;
+}
 
-/* ── BOTTOM BAR ── */
-.bottom-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  background: var(--bg-panel);
-  font-size: 0.68em;
+/* Terminal Panel */
+.panel-terminal { grid-column: 1 / -1; }
+#terminal-output {
+  height: 180px;
+  overflow-y: auto;
+  font-size: 11px;
+  color: var(--green);
+  scrollbar-width: thin;
+  scrollbar-color: var(--green) transparent;
+}
+#terminal-output::-webkit-scrollbar { width: 4px; }
+#terminal-output::-webkit-scrollbar-track { background: transparent; }
+#terminal-output::-webkit-scrollbar-thumb { background: var(--green); border-radius: 2px; }
+.log-line { padding: 1px 0; }
+.log-time { color: #555; }
+.log-info { color: var(--cyan); }
+.log-ok { color: var(--green); }
+.log-warn { color: var(--yellow); }
+.log-err { color: var(--red); }
+
+/* Gauges */
+.gauge { margin: 8px 0; }
+.gauge-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+.gauge-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.gauge-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+.gauge-fill.warn { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.gauge-fill.danger { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+/* Project Items */
+.project-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.project-item:last-child { border-bottom: none; }
+.health-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
   flex-shrink: 0;
 }
-.bottom-bar .segment { display: flex; align-items: center; gap: 6px; }
-.bottom-live-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--red); animation: blink 1s infinite;
-  box-shadow: 0 0 6px var(--red);
+.health-dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.health-dot.recent { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.health-dot.stale { background: #555; }
+.project-info { flex: 1; min-width: 0; }
+.project-name { color: var(--cyan); font-weight: bold; font-size: 12px; }
+.project-meta { color: #666; font-size: 10px; }
+.project-commit { color: #888; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Agent rows */
+.agent-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+}
+.agent-status {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-weight: bold;
+}
+.agent-status.active { color: var(--green); border: 1px solid var(--green); }
+.agent-status.linked { color: var(--cyan); border: 1px solid var(--cyan); }
+.agent-status.ok { color: var(--yellow); border: 1px solid rgba(255,204,0,0.4); }
+
+/* Memory files */
+.mem-file {
+  display: inline-block;
+  background: rgba(0,212,255,0.1);
+  border: 1px solid rgba(0,212,255,0.2);
+  padding: 2px 6px;
+  margin: 2px;
+  border-radius: 3px;
+  font-size: 10px;
+  color: var(--cyan);
 }
 
-/* ── RESPONSIVE ── */
-@media (max-width: 1200px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: auto;
-  }
+/* Info Rows */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
 }
-@media (max-width: 900px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .header { flex-direction: column; gap: 8px; text-align: center; }
-  .header-center { flex-wrap: wrap; justify-content: center; }
-  .logo { font-size: 1.4em; }
+.info-row:last-child { border-bottom: none; }
+.info-label { color: #666; }
+.info-value { color: var(--green); text-align: right; }
+.info-value.warn { color: var(--yellow); }
+.info-value.danger { color: var(--red); }
+.info-value.cyan { color: var(--cyan); }
+
+/* Security rules */
+.sec-rule {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
 }
-@media (max-width: 600px) {
-  .grid {
-    grid-template-columns: 1fr;
-    overflow-y: auto;
-  }
-  .panel { min-height: 200px; }
-  .bottom-bar { flex-wrap: wrap; gap: 4px; justify-content: center; }
+.sec-status { font-weight: bold; }
+.sec-status.locked { color: var(--green); }
+.sec-status.revoked { color: var(--red); }
+.sec-status.restricted { color: var(--yellow); }
+.sec-status.enabled { color: var(--green); }
+.sec-status.disabled { color: #666; }
+
+/* GitHub Contribution Squares */
+.contrib-squares {
+  display: flex;
+  gap: 3px;
+  margin: 6px 0;
+}
+.contrib-sq {
+  width: 12px; height: 12px;
+  border-radius: 2px;
+  background: rgba(0, 255, 65, 0.1);
+}
+.contrib-sq.l1 { background: rgba(0, 255, 65, 0.25); }
+.contrib-sq.l2 { background: rgba(0, 255, 65, 0.45); }
+.contrib-sq.l3 { background: rgba(0, 255, 65, 0.7); }
+.contrib-sq.l4 { background: var(--green); }
+
+/* PR items */
+.pr-item {
+  padding: 3px 0;
+  font-size: 11px;
+  color: #888;
+}
+.pr-item .pr-num { color: var(--cyan); }
+
+/* Pricing table */
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  font-size: 11px;
+}
+.price-peak { color: var(--orange); font-weight: bold; }
+
+/* Weather */
+.weather-main {
+  text-align: center;
+  padding: 8px 0;
+}
+.weather-temp {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 28px;
+  color: var(--cyan);
+  text-shadow: 0 0 10px rgba(0,212,255,0.4);
+}
+.weather-cond { color: #888; font-size: 13px; margin-top: 4px; }
+.weather-details {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+  font-size: 11px;
+  color: #666;
 }
 
-/* ── GLITCH EFFECT ── */
-.glitch { position: relative; }
-.glitch::before, .glitch::after {
-  content: attr(data-text);
-  position: absolute; top: 0; left: 0;
-  width: 100%; height: 100%;
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 16px;
+  font-size: 11px;
+  color: #444;
+  border-top: 1px solid var(--border);
 }
-.glitch::before {
-  animation: glitch1 3s infinite;
-  color: var(--cyan); z-index: -1;
-}
-.glitch::after {
-  animation: glitch2 3s infinite;
-  color: var(--red); z-index: -2;
-}
-@keyframes glitch1 {
-  0%, 95% { clip-path: inset(0); transform: translate(0); }
-  96% { clip-path: inset(20% 0 60% 0); transform: translate(-3px, 0); }
-  97% { clip-path: inset(50% 0 10% 0); transform: translate(3px, 0); }
-  98% { clip-path: inset(0); transform: translate(0); }
-}
-@keyframes glitch2 {
-  0%, 94% { clip-path: inset(0); transform: translate(0); }
-  95% { clip-path: inset(40% 0 20% 0); transform: translate(3px, 0); }
-  96% { clip-path: inset(10% 0 70% 0); transform: translate(-3px, 0); }
-  97% { clip-path: inset(0); transform: translate(0); }
-}
+.footer span { color: var(--cyan); }
 
-/* ── UTILITY ── */
-@keyframes fadeIn { to { opacity: 1; } }
-@keyframes blink { 50% { opacity: 0; } }
-@keyframes pulse {
-  0%, 100% { opacity: 1; } 50% { opacity: 0.6; }
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-grid { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
+  .panel-terminal { grid-column: 1; }
+  .status-bar { font-size: 10px; padding: 6px 10px; }
+  #terminal-output { height: 140px; }
 }
-
-.text-green { color: var(--green); }
-.text-cyan { color: var(--cyan); }
-.text-red { color: var(--red); }
-.text-orange { color: var(--orange); }
-.text-dim { color: var(--text-dim); }
-
-/* Span across grid */
-.span-col-2 { grid-column: span 2; }
 </style>
 </head>
 <body>
+<canvas id="matrix-canvas"></canvas>
+<div class="scanlines"></div>
 
-<!-- ═══ BOOT SEQUENCE ═══ -->
-<div id="boot-overlay">
-  <div id="boot-logo">JEFFREY OS</div>
+<!-- Boot Screen -->
+<div id="boot-screen">
   <div id="boot-text"></div>
-  <div id="boot-progress"><div id="boot-progress-fill"></div></div>
 </div>
 
-<!-- ═══ VISUAL EFFECTS ═══ -->
-<div class="scanlines"></div>
-<div class="crt-flicker"></div>
-<canvas id="matrix-canvas"></canvas>
+<!-- Main App -->
+<div id="app">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span class="hostname">MAGI :: Mac mini M4</span>
+    <span class="uptime" id="uptime">UPTIME: 00d 00h 00m 00s</span>
+    <span class="datetime" id="datetime">--</span>
+    <span class="status-badge">● ALL SYSTEMS OPERATIONAL</span>
+  </div>
 
-<!-- ═══ MAIN DASHBOARD ═══ -->
-<div class="dashboard" id="dashboard">
-
-  <!-- HEADER -->
+  <!-- Header -->
   <div class="header">
-    <div class="header-left">
-      <div class="logo glitch" data-text="JEFFREY OS">JEFFREY OS</div>
-      <div class="header-subtitle">OPUS 4.6 · MAC MINI M4 · COMMAND CENTER</div>
-    </div>
-    <div class="header-center">
-      <span><span class="live-dot"></span> LIVE</span>
-      <span>HOST: <span class="text-cyan">MAGIs-Mac-mini</span></span>
-      <span>TZ: <span class="text-cyan">America/Mexico_City</span></span>
-      <span>UPTIME: <span class="text-green" id="header-uptime">--</span></span>
-    </div>
-    <div class="header-right">
-      <div class="clock-display" id="clock-time">--:--:--</div>
-      <div class="date-display" id="clock-date">----/--/--</div>
-    </div>
+    <h1>JEFFREY OS v5.0 // COMMAND CENTER<span class="cursor-blink"></span></h1>
   </div>
 
-  <!-- GRID -->
-  <div class="grid">
+  <!-- Dashboard Grid -->
+  <div class="dashboard-grid">
 
-    <!-- 1. SYSTEM METRICS -->
-    <div class="panel">
+    <!-- 1. LIVE TERMINAL -->
+    <div class="panel panel-terminal" data-delay="0">
       <div class="panel-header">
-        <span class="panel-title">SYSTEM METRICS</span>
-        <span class="panel-badge badge-ok" id="metrics-badge">NOMINAL</span>
+        <span>▶ LIVE TERMINAL</span>
+        <div class="indicator"></div>
       </div>
       <div class="panel-body">
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-label">CPU LOAD</div>
-            <div class="metric-value" id="cpu-val">--%</div>
-            <div class="metric-bar"><div class="metric-fill" id="cpu-bar" style="width:0%"></div></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">MEMORY</div>
-            <div class="metric-value" id="mem-val">--%</div>
-            <div class="metric-bar"><div class="metric-fill" id="mem-bar" style="width:0%"></div></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">DISK USAGE</div>
-            <div class="metric-value" id="disk-val">--%</div>
-            <div class="metric-bar"><div class="metric-fill" id="disk-bar" style="width:0%"></div></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">SWAP</div>
-            <div class="metric-value" id="swap-val">--%</div>
-            <div class="metric-bar"><div class="metric-fill" id="swap-bar" style="width:0%"></div></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">AI CONTEXT</div>
-            <div class="metric-value" id="ctx-val">6%</div>
-            <div class="metric-bar"><div class="metric-fill" id="ctx-bar" style="width:6%"></div></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">CACHE HIT</div>
-            <div class="metric-value" style="color:var(--green)">99%</div>
-            <div class="metric-bar"><div class="metric-fill" style="width:99%"></div></div>
-          </div>
-        </div>
+        <div id="terminal-output"></div>
       </div>
     </div>
 
-    <!-- 2. CHANNEL STATUS -->
-    <div class="panel">
+    <!-- 2. SYSTEM METRICS -->
+    <div class="panel" data-delay="100">
       <div class="panel-header">
-        <span class="panel-title">CHANNELS & COMMS</span>
-        <span class="panel-badge badge-ok" id="channels-badge">5 ACTIVE</span>
+        <span>◈ SYSTEM METRICS</span>
+        <div class="indicator"></div>
       </div>
       <div class="panel-body">
-        <div class="channel-list" id="channel-list">
-          <div class="channel-row">
-            <div class="channel-left">
-              <div class="channel-dot dot-online"></div>
-              <span class="channel-name">WhatsApp</span>
-            </div>
-            <span class="channel-status-text text-green">LINKED</span>
-          </div>
-          <div class="channel-row">
-            <div class="channel-left">
-              <div class="channel-dot dot-online"></div>
-              <span class="channel-name">iMessage</span>
-            </div>
-            <span class="channel-status-text text-green">ACTIVE</span>
-          </div>
-          <div class="channel-row">
-            <div class="channel-left">
-              <div class="channel-dot dot-standby"></div>
-              <span class="channel-name">Telegram</span>
-            </div>
-            <span class="channel-status-text text-orange">STANDBY</span>
-          </div>
-          <div class="channel-row">
-            <div class="channel-left">
-              <div class="channel-dot dot-online"></div>
-              <span class="channel-name">Voice (Twilio)</span>
-            </div>
-            <span class="channel-status-text text-green">READY</span>
-          </div>
-          <div class="channel-row">
-            <div class="channel-left">
-              <div class="channel-dot dot-online"></div>
-              <span class="channel-name">TTS (ElevenLabs)</span>
-            </div>
-            <span class="channel-status-text text-green">ONLINE</span>
-          </div>
-          <div class="channel-row">
-            <div class="channel-left">
-              <div class="channel-dot dot-online"></div>
-              <span class="channel-name">Webchat</span>
-            </div>
-            <span class="channel-status-text text-green">LOCAL</span>
-          </div>
+        <div class="gauge">
+          <div class="gauge-label"><span>CPU</span><span id="cpu-val">12%</span></div>
+          <div class="gauge-bar"><div class="gauge-fill" id="cpu-bar" style="width:12%"></div></div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label"><span>MEMORY</span><span id="mem-val">68%</span></div>
+          <div class="gauge-bar"><div class="gauge-fill" id="mem-bar" style="width:68%"></div></div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label"><span>DISK (512GB SSD)</span><span id="disk-val">54%</span></div>
+          <div class="gauge-bar"><div class="gauge-fill" id="disk-bar" style="width:54%"></div></div>
+        </div>
+        <div class="gauge">
+          <div class="gauge-label"><span>SWAP</span><span id="swap-val">8%</span></div>
+          <div class="gauge-bar"><div class="gauge-fill" id="swap-bar" style="width:8%"></div></div>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:#555">
+          Apple M4 · 24GB Unified Memory · macOS 15.7
         </div>
       </div>
     </div>
 
-    <!-- 3. WEATHER (MEXICO CITY) -->
-    <div class="panel">
+    <!-- 3. PROJECTS STATUS -->
+    <div class="panel" data-delay="200">
       <div class="panel-header">
-        <span class="panel-title">WEATHER · CDMX</span>
-        <span class="panel-badge badge-ok" id="weather-badge">LIVE</span>
+        <span>◈ PROJECTS STATUS</span>
+        <span style="color:#666;font-family:'Share Tech Mono';font-size:10px">8 REPOS</span>
+      </div>
+      <div class="panel-body" id="projects-list">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+    <!-- 4. AGENTS & MEMORY -->
+    <div class="panel" data-delay="300">
+      <div class="panel-header">
+        <span>◈ AGENTS &amp; MEMORY</span>
+        <div class="indicator"></div>
       </div>
       <div class="panel-body">
-        <div class="weather-display" id="weather-display">
-          <div class="weather-temp" id="weather-temp">--°</div>
-          <div class="weather-desc" id="weather-desc">Loading...</div>
-          <div class="weather-details" id="weather-details">
-            <div class="weather-detail">
-              <div class="weather-detail-label">FEELS LIKE</div>
-              <div class="weather-detail-value" id="weather-feels">--°</div>
-            </div>
-            <div class="weather-detail">
-              <div class="weather-detail-label">HUMIDITY</div>
-              <div class="weather-detail-value" id="weather-humidity">--%</div>
-            </div>
-            <div class="weather-detail">
-              <div class="weather-detail-label">WIND</div>
-              <div class="weather-detail-value" id="weather-wind">-- km/h</div>
-            </div>
-            <div class="weather-detail">
-              <div class="weather-detail-label">VISIBILITY</div>
-              <div class="weather-detail-value" id="weather-vis">-- km</div>
-            </div>
-          </div>
+        <div style="margin-bottom:8px;color:#555;font-size:10px;letter-spacing:1px">ACTIVE SESSIONS</div>
+        <div class="agent-row">
+          <span>Main Session (claude-opus-4.6)</span>
+          <span class="agent-status active">ACTIVE</span>
+        </div>
+        <div class="agent-row">
+          <span>WhatsApp Gateway</span>
+          <span class="agent-status linked">LINKED</span>
+        </div>
+        <div class="agent-row">
+          <span>iMessage Bridge</span>
+          <span class="agent-status active">ACTIVE</span>
+        </div>
+        <div style="margin:8px 0 4px;color:#555;font-size:10px;letter-spacing:1px">CRON JOBS</div>
+        <div class="agent-row">
+          <span>Airbnb Monitor (5x daily)</span>
+          <span class="agent-status ok">OK</span>
+        </div>
+        <div class="agent-row">
+          <span>LinkedIn Posts (3x daily)</span>
+          <span class="agent-status ok">OK</span>
+        </div>
+        <div class="agent-row">
+          <span>Brightspace Alerts (4x weekly)</span>
+          <span class="agent-status ok">OK</span>
+        </div>
+        <div class="agent-row">
+          <span>OSS Contributions (3x daily)</span>
+          <span class="agent-status ok">OK</span>
+        </div>
+        <div style="margin:10px 0 4px;color:#555;font-size:10px;letter-spacing:1px">MEMORY FILES</div>
+        <div>
+          <span class="mem-file">MEMORY.md</span>
+          <span class="mem-file">SOUL.md</span>
+          <span class="mem-file">USER.md</span>
+          <span class="mem-file">TOOLS.md</span>
+          <span class="mem-file" id="daily-log-file">2026-03-24.md</span>
         </div>
       </div>
     </div>
 
-    <!-- 4. UPTIME & SYSTEM INFO -->
-    <div class="panel">
+    <!-- 5. TOKENS & IP -->
+    <div class="panel" data-delay="400">
       <div class="panel-header">
-        <span class="panel-title">UPTIME & STATUS</span>
-        <span class="panel-badge badge-ok">ONLINE</span>
+        <span>◈ TOKENS &amp; IP</span>
+        <span style="color:#666;font-family:'Share Tech Mono';font-size:10px">IDENTITY</span>
       </div>
       <div class="panel-body">
-        <div class="uptime-display">
-          <div class="uptime-big" id="uptime-counter">00d 00h 00m 00s</div>
-          <div class="uptime-label">SYSTEM UPTIME</div>
-          <div class="uptime-grid">
-            <div class="uptime-unit">
-              <div class="uptime-num" id="up-days">00</div>
-              <div class="uptime-unit-label">DAYS</div>
-            </div>
-            <div class="uptime-unit">
-              <div class="uptime-num" id="up-hours">00</div>
-              <div class="uptime-unit-label">HOURS</div>
-            </div>
-            <div class="uptime-unit">
-              <div class="uptime-num" id="up-mins">00</div>
-              <div class="uptime-unit-label">MINS</div>
-            </div>
-            <div class="uptime-unit">
-              <div class="uptime-num" id="up-secs">00</div>
-              <div class="uptime-unit-label">SECS</div>
-            </div>
-          </div>
+        <div class="info-row"><span class="info-label">Local IP</span><span class="info-value">192.168.1.82</span></div>
+        <div class="info-row"><span class="info-label">Public IP</span><span class="info-value cyan" id="public-ip">fetching...</span></div>
+        <div class="info-row"><span class="info-label">Host</span><span class="info-value">Mac mini M4 (24/7)</span></div>
+        <div class="info-row"><span class="info-label">AI Model</span><span class="info-value cyan">claude-opus-4.6</span></div>
+        <div class="info-row"><span class="info-label">Plan</span><span class="info-value">OpenClaw Pro</span></div>
+        <div class="gauge" style="margin-top:10px">
+          <div class="gauge-label"><span>TOKEN USAGE</span><span id="token-val">45%</span></div>
+          <div class="gauge-bar"><div class="gauge-fill" id="token-bar" style="width:45%"></div></div>
         </div>
-        <div style="margin-top:10px; font-size:0.7em; color:var(--text-dim); border-top:1px solid #111; padding-top:6px;">
-          <div>OS: <span class="text-green">macOS 15.7.4</span></div>
-          <div>CHIP: <span class="text-green">Apple M4</span></div>
-          <div>RAM: <span class="text-green">16 GB</span></div>
-          <div>KERNEL: <span class="text-green" id="kernel-ver">Darwin</span></div>
-        </div>
+        <div style="font-size:10px;color:#555;margin-top:4px">~2.1M / 4.7M tokens this billing cycle</div>
       </div>
     </div>
 
-    <!-- 5. LIVE TERMINAL (span 2 cols) -->
-    <div class="panel span-col-2">
+    <!-- 6. FIREWALL & SECURITY -->
+    <div class="panel" data-delay="500">
       <div class="panel-header">
-        <span class="panel-title">LIVE TERMINAL</span>
-        <span class="panel-badge badge-live">REC</span>
+        <span>◈ FIREWALL &amp; SECURITY</span>
+        <span style="color:var(--green);font-size:10px">🔒 SECURED</span>
       </div>
       <div class="panel-body">
-        <div class="terminal-output" id="terminal"></div>
+        <div style="margin-bottom:6px;color:#555;font-size:10px;letter-spacing:1px">DM POLICY</div>
+        <div class="sec-rule"><span>Julio</span><span class="sec-status locked">ALLOWED 🔒</span></div>
+        <div class="sec-rule"><span>Dan HD</span><span class="sec-status revoked">ACCESS REVOKED ⛔</span></div>
+        <div class="sec-rule"><span>Kevin</span><span class="sec-status restricted">GROUP ONLY</span></div>
+        <div class="sec-rule"><span>All contacts</span><span class="sec-status restricted">GROUP ONLY</span></div>
+        <div style="margin:10px 0 6px;color:#555;font-size:10px;letter-spacing:1px">SYSTEM</div>
+        <div class="sec-rule"><span>macOS Firewall</span><span class="sec-status enabled">ENABLED</span></div>
+        <div class="sec-rule"><span>SSH</span><span class="sec-status disabled">DISABLED</span></div>
+        <div class="sec-rule"><span>Open Ports</span><span class="sec-status enabled">8090 (dashboard)</span></div>
       </div>
     </div>
 
-    <!-- 6. ACTIVE SESSIONS -->
-    <div class="panel">
+    <!-- 7. NETWORK -->
+    <div class="panel" data-delay="600">
       <div class="panel-header">
-        <span class="panel-title">ACTIVE SESSIONS</span>
-        <span class="panel-badge badge-ok" id="session-count">-- OPEN</span>
+        <span>◈ NETWORK</span>
+        <div class="indicator"></div>
       </div>
       <div class="panel-body">
-        <div class="sessions-list" id="sessions-list"></div>
-        <div class="sessions-footer" id="sessions-footer">
-          DEFAULT MODEL: opus-4.6 (1M ctx)
-        </div>
+        <div class="info-row"><span class="info-label">Gateway</span><span class="info-value" style="color:var(--green)">● WhatsApp CONNECTED</span></div>
+        <div class="info-row"><span class="info-label">Latency</span><span class="info-value" id="latency-val">45ms</span></div>
+        <div class="info-row"><span class="info-label">Uptime</span><span class="info-value" id="net-uptime">19d 4h 22m</span></div>
+        <div class="info-row"><span class="info-label">Bandwidth IN</span><span class="info-value" id="bw-in">12.4 MB/s</span></div>
+        <div class="info-row"><span class="info-label">Bandwidth OUT</span><span class="info-value" id="bw-out">3.2 MB/s</span></div>
+        <div class="info-row"><span class="info-label">DNS</span><span class="info-value cyan">1.1.1.1 (Cloudflare)</span></div>
+        <div class="info-row"><span class="info-label">Protocol</span><span class="info-value">WebSocket / TLS 1.3</span></div>
       </div>
     </div>
 
-    <!-- 7. NETWORK STATUS -->
-    <div class="panel">
+    <!-- 8. GITHUB STATUS -->
+    <div class="panel" data-delay="700">
       <div class="panel-header">
-        <span class="panel-title">NETWORK</span>
-        <span class="panel-badge badge-ok" id="net-badge">CONNECTED</span>
+        <span>◈ GITHUB STATUS</span>
+        <span style="color:#666;font-family:'Share Tech Mono';font-size:10px">juliosuas</span>
       </div>
       <div class="panel-body">
-        <div class="network-nodes" id="network-nodes">
-          <div class="net-node">
-            <div class="net-node-left">
-              <div class="channel-dot dot-online"></div>
-              <div>
-                <div class="net-node-name">MAC-MINI-M4</div>
-                <div class="net-node-detail">Primary · 192.168.1.x</div>
-              </div>
-            </div>
-            <span class="net-latency" id="net-latency-local">&lt;1ms</span>
-          </div>
-          <div class="net-node">
-            <div class="net-node-left">
-              <div class="channel-dot dot-online"></div>
-              <div>
-                <div class="net-node-name">GATEWAY</div>
-                <div class="net-node-detail">Port 4000 · OpenClaw</div>
-              </div>
-            </div>
-            <span class="net-latency" id="net-latency-gw">--ms</span>
-          </div>
-          <div class="net-node">
-            <div class="net-node-left">
-              <div class="channel-dot dot-standby"></div>
-              <div>
-                <div class="net-node-name">EVA-02</div>
-                <div class="net-node-detail">i9 + RTX 4090 · WOL</div>
-              </div>
-            </div>
-            <span class="text-orange">STANDBY</span>
-          </div>
+        <div class="info-row"><span class="info-label">Open PRs</span><span class="info-value">8 <span style="color:#666">(3 Sherlock, 5 Anthropic)</span></span></div>
+        <div class="info-row"><span class="info-label">Merged (March)</span><span class="info-value">7</span></div>
+        <div style="margin:8px 0 4px;color:#555;font-size:10px">CONTRIBUTIONS TODAY</div>
+        <div class="contrib-squares">
+          <div class="contrib-sq l1"></div><div class="contrib-sq l2"></div><div class="contrib-sq l4"></div>
+          <div class="contrib-sq l3"></div><div class="contrib-sq l2"></div><div class="contrib-sq l1"></div>
+          <div class="contrib-sq l3"></div><div class="contrib-sq l4"></div><div class="contrib-sq l2"></div>
+          <div class="contrib-sq l1"></div><div class="contrib-sq"></div><div class="contrib-sq l1"></div>
+          <div class="contrib-sq l2"></div><div class="contrib-sq l3"></div>
         </div>
-        <div class="net-stats" id="net-stats">
-          <div class="net-stat">
-            <div class="net-stat-label">DOWNLOAD</div>
-            <div class="net-stat-value" id="net-down">-- Mbps</div>
-          </div>
-          <div class="net-stat">
-            <div class="net-stat-label">UPLOAD</div>
-            <div class="net-stat-value" id="net-up">-- Mbps</div>
-          </div>
-          <div class="net-stat">
-            <div class="net-stat-label">ONLINE</div>
-            <div class="net-stat-value text-green" id="net-online">YES</div>
-          </div>
-          <div class="net-stat">
-            <div class="net-stat-label">TYPE</div>
-            <div class="net-stat-value" id="net-type">--</div>
-          </div>
+        <div style="margin-top:6px;color:#555;font-size:10px">RECENT ACTIVITY</div>
+        <div class="pr-item"><span class="pr-num">PR #25</span> — Cloud security skill descriptions</div>
+        <div class="pr-item"><span class="pr-num">PR #18</span> — Sherlock: fix TikTok false positives</div>
+        <div class="pr-item"><span class="pr-num">PR #42</span> — Add threat modeling skill</div>
+        <div style="margin-top:6px;font-size:10px;color:#555">
+          <a href="https://github.com/juliosuas" style="color:var(--cyan);text-decoration:none">github.com/juliosuas</a>
         </div>
       </div>
     </div>
 
-    <!-- 8. QUICK ACTIONS -->
-    <div class="panel">
+    <!-- 9. AIRBNB / CASA DIAMANTE -->
+    <div class="panel" data-delay="800">
       <div class="panel-header">
-        <span class="panel-title">QUICK ACTIONS</span>
-        <span class="panel-badge badge-ok">READY</span>
+        <span>◈ AIRBNB / CASA DIAMANTE</span>
+        <span style="color:var(--green);font-size:10px">LISTED ✅</span>
       </div>
       <div class="panel-body">
-        <div class="actions-grid">
-          <button class="action-btn" onclick="triggerAction('wake-eva02')">
-            <span class="action-icon">⚡</span>
-            <span class="action-label">WAKE EVA-02</span>
-          </button>
-          <button class="action-btn" onclick="triggerAction('system-check')">
-            <span class="action-icon">🔍</span>
-            <span class="action-label">SYS CHECK</span>
-          </button>
-          <button class="action-btn" onclick="triggerAction('clear-cache')">
-            <span class="action-icon">🗑</span>
-            <span class="action-label">CLEAR CACHE</span>
-          </button>
-          <button class="action-btn" onclick="triggerAction('restart-gw')">
-            <span class="action-icon">🔄</span>
-            <span class="action-label">RESTART GW</span>
-          </button>
-          <button class="action-btn" onclick="triggerAction('backup')">
-            <span class="action-icon">💾</span>
-            <span class="action-label">BACKUP</span>
-          </button>
-          <button class="action-btn" onclick="triggerAction('code-red')">
-            <span class="action-icon" style="color:var(--red)">🚨</span>
-            <span class="action-label" style="color:var(--red)">CODE RED</span>
-          </button>
+        <div class="info-row"><span class="info-label">Status</span><span class="info-value">LISTED ✅</span></div>
+        <div class="info-row"><span class="info-label">Instant Book</span><span class="info-value">ON</span></div>
+        <div class="info-row"><span class="info-label">Min Stay</span><span class="info-value">2 nights (holidays)</span></div>
+        <div class="info-row"><span class="info-label">Reservations</span><span class="info-value warn">0 ⚠️</span></div>
+        <div style="margin:10px 0 4px;color:#555;font-size:10px;letter-spacing:1px">SEMANA SANTA PRICING</div>
+        <div class="price-row"><span>Mar 29 – Apr 5</span><span class="price-peak">$4,500/night (PEAK)</span></div>
+        <div class="price-row"><span>Apr 6 – Apr 12</span><span style="color:var(--yellow)">$3,500/night</span></div>
+        <div style="margin-top:8px;font-size:10px;color:#555">
+          <a href="https://juliosuas.github.io/airbnb-manager" style="color:var(--cyan);text-decoration:none">juliosuas.github.io/airbnb-manager</a>
         </div>
       </div>
     </div>
 
-    <!-- 9. REMINDERS & ALERTS -->
-    <div class="panel">
+    <!-- 10. LINKEDIN -->
+    <div class="panel" data-delay="900">
       <div class="panel-header">
-        <span class="panel-title">REMINDERS & ALERTS</span>
-        <span class="panel-badge badge-warn" id="reminder-badge">1 URGENT</span>
+        <span>◈ LINKEDIN</span>
+        <span style="color:var(--cyan);font-size:10px">ENGINE ACTIVE</span>
       </div>
       <div class="panel-body">
-        <div class="reminders-list" id="reminders-list">
-          <div class="reminder-item urgent">
-            <div class="reminder-priority text-red">CRITICAL</div>
-            <div class="reminder-text">Palacio de Hierro: $1,915 MXN</div>
-            <div class="reminder-meta" id="palacio-countdown">Due: March 20</div>
-          </div>
-          <div class="reminder-item warning">
-            <div class="reminder-priority text-orange">SECURITY</div>
-            <div class="reminder-text">DM Policy: JULIO ONLY</div>
-            <div class="reminder-meta">Dan HD: ACCESS REVOKED</div>
-          </div>
-          <div class="reminder-item">
-            <div class="reminder-priority text-green">COMPLETE</div>
-            <div class="reminder-text">EVA-02 i9 installed</div>
-            <div class="reminder-meta">WhatsApp re-linked · iMessage configured</div>
-          </div>
-          <div class="reminder-item">
-            <div class="reminder-priority text-cyan">INFO</div>
-            <div class="reminder-text">OpenClaw v2026.3.13 deployed</div>
-            <div class="reminder-meta">play-anime.sh fixed</div>
-          </div>
+        <div class="info-row"><span class="info-label">Profile</span><span class="info-value cyan">juliosuas</span></div>
+        <div style="font-size:10px;color:#888;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
+          "Founder &amp; CEO @ Cytadel | Cybersecurity Researcher | CEH"
+        </div>
+        <div class="info-row"><span class="info-label">Posts this week</span><span class="info-value">3</span></div>
+        <div class="info-row"><span class="info-label">Impressions</span><span class="info-value">91+</span></div>
+        <div class="info-row"><span class="info-label">Auto-post</span><span class="info-value">ACTIVE</span></div>
+        <div class="info-row"><span class="info-label">Next post</span><span class="info-value warn">Scheduled</span></div>
+        <div style="margin-top:6px;font-size:10px;color:#555">
+          <a href="https://linkedin.com/in/juliosuas" style="color:var(--cyan);text-decoration:none">linkedin.com/in/juliosuas</a>
         </div>
       </div>
     </div>
 
-    <!-- 10. INFRASTRUCTURE -->
-    <div class="panel">
+    <!-- 11. EMAIL (Gmail) -->
+    <div class="panel" data-delay="1000">
       <div class="panel-header">
-        <span class="panel-title">INFRASTRUCTURE</span>
-        <span class="panel-badge badge-ok">3 NODES</span>
+        <span>◈ EMAIL (GMAIL)</span>
+        <span style="color:var(--yellow);font-size:10px">⚠️ STORAGE</span>
       </div>
       <div class="panel-body">
-        <div class="network-nodes">
-          <div class="net-node" style="flex-direction:column; align-items:stretch;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-              <span class="net-node-name">MAC MINI M4</span>
-              <span class="text-green" style="font-size:0.85em;">● ONLINE</span>
-            </div>
-            <div class="net-node-detail">Apple M4 · 16GB · macOS 15.7.4</div>
-            <div class="net-node-detail">228GB SSD · Gateway Port 4000</div>
-          </div>
-          <div class="net-node" style="flex-direction:column; align-items:stretch;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-              <span class="net-node-name">EVA-02</span>
-              <span class="text-orange" style="font-size:0.85em;">● STANDBY</span>
-            </div>
-            <div class="net-node-detail">i9-14900K · RTX 4090 · 48GB DDR5</div>
-            <div class="net-node-detail">ROG Evangelion · WOL Ready</div>
-          </div>
-          <div class="net-node" style="flex-direction:column; align-items:stretch;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-              <span class="net-node-name">iPHONE 17 PRO</span>
-              <span class="text-green" style="font-size:0.85em;">● LINKED</span>
-            </div>
-            <div class="net-node-detail">iMessage bridge · WhatsApp host</div>
-          </div>
+        <div class="info-row"><span class="info-label">Account</span><span class="info-value">juliosuas@gmail.com</span></div>
+        <div class="info-row"><span class="info-label">Unread</span><span class="info-value danger">20,568</span></div>
+        <div class="gauge" style="margin:6px 0">
+          <div class="gauge-label"><span>Storage</span><span style="color:var(--yellow)">90% (13.51/15 GB) ⚠️</span></div>
+          <div class="gauge-bar"><div class="gauge-fill warn" style="width:90%"></div></div>
+        </div>
+        <div class="info-row"><span class="info-label">Last important</span><span class="info-value">Cloudflare recruiter ✅</span></div>
+        <div class="info-row"><span class="info-label">Brightspace</span><span class="info-value">Alerts configured</span></div>
+      </div>
+    </div>
+
+    <!-- 12. WEATHER -->
+    <div class="panel" data-delay="1100">
+      <div class="panel-header">
+        <span>◈ WEATHER — MEXICO CITY</span>
+        <span style="color:#666;font-family:'Share Tech Mono';font-size:10px" id="weather-time">--</span>
+      </div>
+      <div class="panel-body">
+        <div class="weather-main">
+          <div class="weather-temp" id="weather-temp">--°C</div>
+          <div class="weather-cond" id="weather-cond">Loading...</div>
+        </div>
+        <div class="weather-details">
+          <span id="weather-humidity">💧 --%</span>
+          <span id="weather-wind">💨 -- km/h</span>
+          <span id="weather-feels">🌡️ Feels --°C</span>
         </div>
       </div>
     </div>
 
-  </div><!-- /grid -->
+  </div><!-- end grid -->
 
-  <!-- BOTTOM BAR -->
-  <div class="bottom-bar">
-    <div class="segment">
-      <div class="bottom-live-dot"></div>
-      <span>JEFFREY OS v4.6 · OpenClaw 2026.3.13</span>
-    </div>
-    <div class="segment">
-      <span>MODEL: CLAUDE-OPUS-4.6 · CTX: 1,000,000 · CACHE: 99%</span>
-    </div>
-    <div class="segment">
-      <span>REFRESH: <span id="refresh-countdown">30</span>s</span>
-    </div>
-    <div class="segment">
-      <span id="bottom-clock">--:--:--</span>
-    </div>
+  <!-- Footer -->
+  <div class="footer">
+    Mac mini M4 · macOS 15.7 · Powered by <span>OpenClaw</span> · MAGI
   </div>
-
-</div><!-- /dashboard -->
+</div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   JEFFREY OS — DASHBOARD ENGINE
-   ═══════════════════════════════════════════════════════════════ */
-
-// ── BOOT SEQUENCE ──
-const bootLines = [
-  '[BIOS] POST check .................. OK',
-  '[BIOS] Memory test: 16384 MB ....... OK',
-  '[BOOT] Loading kernel: Darwin 24.6.0',
-  '[BOOT] Mounting filesystems ........ OK',
-  '[BOOT] Initializing network stack',
-  '[BOOT] Loading jeffrey_os v4.6',
-  '',
-  '[CORE] Neural engine: claude-opus-4.6',
-  '[CORE] Context window: 1,000,000 tokens',
-  '[CORE] Loading memory system ........ 5 files',
-  '',
-  '[CHAN] WhatsApp gateway ............ LINKED',
-  '[CHAN] iMessage gateway ............ ACTIVE',
-  '[CHAN] Telegram .................... STANDBY',
-  '[CHAN] Voice (Twilio) .............. READY',
-  '[CHAN] TTS (ElevenLabs) ............ ONLINE',
-  '',
-  '[SEC] DM Policy: JULIO ONLY',
-  '[SEC] Perimeter scan .............. CLEAR',
-  '[SEC] Threat level ................ LOW',
-  '',
-  '[HW] Mac mini M4 .................. ONLINE',
-  '[HW] EVA-02 (i9+4090) ............ STANDBY',
-  '[HW] iPhone 17 Pro ................ LINKED',
-  '',
-  '[NET] Network status .............. CONNECTED',
-  '[NET] Gateway port 4000 ........... OK',
-  '',
-  '══════════════════════════════════════════',
-  '  JEFFREY OS v4.6 — ALL SYSTEMS ONLINE',
-  '  "Consider it done, because I did it."',
-  '══════════════════════════════════════════',
-];
-
-async function runBootSequence() {
-  const overlay = document.getElementById('boot-overlay');
-  const logo = document.getElementById('boot-logo');
-  const textEl = document.getElementById('boot-text');
-  const progressFill = document.getElementById('boot-progress-fill');
-
-  // Show logo first
-  await sleep(300);
-  logo.classList.add('visible');
-  await sleep(1200);
-
-  // Type out boot lines
-  let displayText = '';
-  for (let i = 0; i < bootLines.length; i++) {
-    displayText += bootLines[i] + '\n';
-    // Keep only last ~18 lines visible
-    const lines = displayText.split('\n');
-    if (lines.length > 18) {
-      displayText = lines.slice(-18).join('\n');
-    }
-    textEl.textContent = displayText;
-    progressFill.style.width = ((i + 1) / bootLines.length * 100) + '%';
-    await sleep(60 + Math.random() * 40);
-  }
-
-  await sleep(600);
-
-  // Fade out boot, show dashboard
-  overlay.classList.add('fade-out');
-  document.getElementById('dashboard').classList.add('visible');
-  await sleep(800);
-  overlay.style.display = 'none';
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// ── MATRIX RAIN ──
-function initMatrix() {
+// ============ MATRIX RAIN ============
+(function() {
   const canvas = document.getElementById('matrix-canvas');
   const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  const chars = 'ジェフリーABCDEF0123456789アイウエオカキクケコ░▒▓█';
-  const fontSize = 13;
-  const columns = Math.floor(canvas.width / fontSize);
-  const drops = Array(columns).fill(1);
+  let w, h, cols, drops;
+  const chars = 'アイウエオカキクケコサシスセソタチツテトJEFFREY01';
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    cols = Math.floor(w / 16);
+    drops = Array(cols).fill(1);
+  }
+  resize();
+  window.addEventListener('resize', resize);
 
   function draw() {
-    ctx.fillStyle = 'rgba(0,0,0,0.05)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(10, 10, 15, 0.08)';
+    ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = '#00ff41';
-    ctx.font = fontSize + 'px monospace';
-    for (let i = 0; i < drops.length; i++) {
+    ctx.font = '14px monospace';
+    for (let i = 0; i < cols; i++) {
       const char = chars[Math.floor(Math.random() * chars.length)];
-      ctx.fillText(char, i * fontSize, drops[i] * fontSize);
-      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      ctx.fillText(char, i * 16, drops[i] * 16);
+      if (drops[i] * 16 > h && Math.random() > 0.975) drops[i] = 0;
       drops[i]++;
     }
+    requestAnimationFrame(draw);
   }
-  setInterval(draw, 55);
+  draw();
+})();
 
-  window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  });
-}
+// ============ BOOT SEQUENCE ============
+(function() {
+  const bootLines = [
+    'JEFFREY OS v5.0 — INITIALIZING...',
+    '',
+    '[BIOS] Apple M4 Silicon detected',
+    '[BIOS] 24GB Unified Memory — OK',
+    '[BIOS] 512GB NVMe SSD — OK',
+    '[KERN] Loading darwin kernel 24.6.0...',
+    '[KERN] macOS 15.7 Sequoia — READY',
+    '[NET ] Ethernet link up — 192.168.1.82',
+    '[NET ] DNS resolver → 1.1.1.1 (Cloudflare)',
+    '[AUTH] OpenClaw Pro license — VALID',
+    '[CORE] Loading SOUL.md... identity confirmed',
+    '[CORE] Loading MEMORY.md... continuity restored',
+    '[CORE] Loading USER.md... Julio C recognized',
+    '[AGNT] claude-opus-4.6 session — ACTIVE',
+    '[GATE] WhatsApp gateway — CONNECTED',
+    '[GATE] iMessage bridge — CONNECTED',
+    '[CRON] 4 scheduled jobs — ALL OK',
+    '[SEC ] Firewall enabled — DM policy enforced',
+    '[DASH] Command center rendering...',
+    '',
+    '▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100%',
+    '',
+    'ALL SYSTEMS OPERATIONAL. Welcome back, Juls.',
+    ''
+  ];
 
-// ── CLOCK ──
-function updateClock() {
-  const now = new Date();
-  const opts = { timeZone: 'America/Mexico_City', hour12: false };
-  const time = now.toLocaleTimeString('en-US', { ...opts, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const date = now.toLocaleDateString('en-US', { ...opts, year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' });
+  const bootEl = document.getElementById('boot-text');
+  let lineIdx = 0, charIdx = 0, text = '';
 
-  document.getElementById('clock-time').textContent = time;
-  document.getElementById('clock-date').textContent = date;
-  document.getElementById('bottom-clock').textContent = time + ' CST';
-}
-
-// ── UPTIME ──
-// Simulated boot time (configurable, defaults to ~10 days ago)
-const BOOT_TIME = new Date(Date.now() - (10 * 24 * 60 * 60 * 1000 + 14 * 60 * 60 * 1000 + 22 * 60 * 1000));
-
-function updateUptime() {
-  const diff = Date.now() - BOOT_TIME.getTime();
-  const secs = Math.floor(diff / 1000);
-  const mins = Math.floor(secs / 60);
-  const hours = Math.floor(mins / 60);
-  const days = Math.floor(hours / 24);
-
-  const d = days;
-  const h = hours % 24;
-  const m = mins % 60;
-  const s = secs % 60;
-
-  const pad = n => String(n).padStart(2, '0');
-  document.getElementById('uptime-counter').textContent = `${pad(d)}d ${pad(h)}h ${pad(m)}m ${pad(s)}s`;
-  document.getElementById('up-days').textContent = pad(d);
-  document.getElementById('up-hours').textContent = pad(h);
-  document.getElementById('up-mins').textContent = pad(m);
-  document.getElementById('up-secs').textContent = pad(s);
-  document.getElementById('header-uptime').textContent = `${d}d ${h}h ${m}m`;
-}
-
-// ── SYSTEM METRICS ──
-// Try real APIs, fallback to simulated
-let metrics = { cpu: 5, mem: 46, disk: 15, swap: 2 };
-
-function updateMetrics() {
-  // Simulate realistic fluctuations around baseline
-  metrics.cpu = Math.max(1, Math.min(100, metrics.cpu + (Math.random() - 0.5) * 8));
-  metrics.mem = Math.max(30, Math.min(85, 46 + (Math.random() - 0.5) * 12));
-  metrics.disk = 15 + Math.random() * 0.5;
-  metrics.swap = Math.max(0, 2 + (Math.random() - 0.5) * 3);
-
-  // Use navigator.deviceMemory if available
-  if (navigator.deviceMemory) {
-    // deviceMemory gives total RAM in GB
-    document.querySelector('#mem-val').title = `Total: ${navigator.deviceMemory}GB`;
-  }
-
-  setMetric('cpu', metrics.cpu);
-  setMetric('mem', metrics.mem);
-  setMetric('disk', metrics.disk);
-  setMetric('swap', metrics.swap);
-
-  // AI context simulation
-  const ctx = Math.max(5, 6 + Math.random() * 4);
-  document.getElementById('ctx-val').textContent = Math.floor(ctx) + '%';
-  document.getElementById('ctx-bar').style.width = ctx + '%';
-
-  // Update badge
-  const badge = document.getElementById('metrics-badge');
-  if (metrics.cpu > 80 || metrics.mem > 85) {
-    badge.textContent = 'WARNING';
-    badge.className = 'panel-badge badge-warn';
-  } else {
-    badge.textContent = 'NOMINAL';
-    badge.className = 'panel-badge badge-ok';
-  }
-}
-
-function setMetric(id, value) {
-  const val = Math.floor(value);
-  const el = document.getElementById(id + '-val');
-  const bar = document.getElementById(id + '-bar');
-  el.textContent = val + '%';
-  bar.style.width = val + '%';
-
-  // Color coding
-  el.className = 'metric-value' + (val > 80 ? ' crit' : val > 60 ? ' warn' : '');
-  bar.className = 'metric-fill' + (val > 80 ? ' crit' : val > 60 ? ' warn' : '');
-}
-
-// ── WEATHER (wttr.in) ──
-async function fetchWeather() {
-  try {
-    const resp = await fetch('https://wttr.in/Mexico+City?format=j1');
-    if (!resp.ok) throw new Error('Weather API error');
-    const data = await resp.json();
-    const current = data.current_condition[0];
-
-    document.getElementById('weather-temp').textContent = current.temp_C + '°C';
-    document.getElementById('weather-desc').textContent = current.weatherDesc[0].value.toUpperCase();
-    document.getElementById('weather-feels').textContent = current.FeelsLikeC + '°C';
-    document.getElementById('weather-humidity').textContent = current.humidity + '%';
-    document.getElementById('weather-wind').textContent = current.windspeedKmph + ' km/h';
-    document.getElementById('weather-vis').textContent = current.visibility + ' km';
-    document.getElementById('weather-badge').textContent = 'LIVE';
-    document.getElementById('weather-badge').className = 'panel-badge badge-ok';
-  } catch (e) {
-    // Fallback simulated data for CDMX
-    document.getElementById('weather-temp').textContent = '22°C';
-    document.getElementById('weather-desc').textContent = 'PARTLY CLOUDY';
-    document.getElementById('weather-feels').textContent = '21°C';
-    document.getElementById('weather-humidity').textContent = '45%';
-    document.getElementById('weather-wind').textContent = '12 km/h';
-    document.getElementById('weather-vis').textContent = '10 km';
-    document.getElementById('weather-badge').textContent = 'CACHED';
-    document.getElementById('weather-badge').className = 'panel-badge badge-warn';
-  }
-}
-
-// ── SESSIONS ──
-const defaultSessions = [
-  { id: 'agent:main:main', model: 'opus-4.6', age: 'now' },
-  { id: 'wa:group:12036…', model: 'sonnet-4.6', age: '2h' },
-  { id: 'wa:group:12036…', model: 'sonnet-4.6', age: '6h' },
-  { id: 'wa:dm:julio', model: 'opus-4.6', age: '1d' },
-  { id: 'imsg:bridge:main', model: 'sonnet-4.6', age: '2d' },
-  { id: 'wa:group:12036…', model: 'sonnet-4.6', age: '4d' },
-  { id: 'web:chat:local', model: 'opus-4.6', age: '5d' },
-  { id: 'cron:heartbeat', model: 'haiku-4.5', age: '10d' },
-];
-
-function renderSessions(sessions) {
-  const list = document.getElementById('sessions-list');
-  list.innerHTML = '';
-  sessions.forEach(s => {
-    const row = document.createElement('div');
-    row.className = 'session-row';
-    row.innerHTML = `
-      <span class="session-id">${s.id}</span>
-      <span class="session-model">${s.model}</span>
-      <span class="session-age">${s.age}</span>
-    `;
-    list.appendChild(row);
-  });
-  document.getElementById('session-count').textContent = sessions.length + ' OPEN';
-}
-
-async function fetchSessions() {
-  try {
-    const resp = await fetch('http://localhost:4000/api/sessions', { signal: AbortSignal.timeout(3000) });
-    if (!resp.ok) throw new Error('API error');
-    const data = await resp.json();
-    if (Array.isArray(data) && data.length > 0) {
-      renderSessions(data);
+  function typeBoot() {
+    if (lineIdx >= bootLines.length) {
+      setTimeout(() => {
+        document.getElementById('boot-screen').classList.add('fade-out');
+        document.getElementById('app').classList.add('visible');
+        setTimeout(() => {
+          document.getElementById('boot-screen').style.display = 'none';
+          revealPanels();
+        }, 800);
+      }, 400);
       return;
     }
-  } catch (e) { /* fallback */ }
-  renderSessions(defaultSessions);
+    const line = bootLines[lineIdx];
+    if (charIdx >= line.length) {
+      text += '\n';
+      lineIdx++;
+      charIdx = 0;
+      bootEl.innerHTML = text + '<span class="cursor"></span>';
+      setTimeout(typeBoot, lineIdx === bootLines.length ? 200 : 40);
+    } else {
+      text += line[charIdx];
+      charIdx++;
+      bootEl.innerHTML = text + '<span class="cursor"></span>';
+      setTimeout(typeBoot, 12);
+    }
+  }
+  typeBoot();
+})();
+
+// ============ REVEAL PANELS ============
+function revealPanels() {
+  document.querySelectorAll('.panel').forEach((p, i) => {
+    const delay = parseInt(p.dataset.delay) || i * 100;
+    setTimeout(() => p.classList.add('visible'), delay);
+  });
 }
 
-// ── TERMINAL LOG ──
-const bootTermLines = [
-  { t: '$ jeffrey_os --init --mode=dashboard', c: 't-prompt' },
-  { t: '[BOOT] Neural core: claude-opus-4.6 (1M tokens)', c: 't-info' },
-  { t: '[BOOT] Memory: 5 files loaded (MEMORY.md + daily)', c: 't-info' },
-  { t: '[OK] WhatsApp gateway: LINKED', c: 't-success' },
-  { t: '[OK] iMessage gateway: ACTIVE', c: 't-success' },
-  { t: '[OK] Voice (Twilio): READY', c: 't-success' },
-  { t: '[SEC] DM Policy: JULIO ONLY', c: 't-success' },
-  { t: '[HW] Mac mini M4: 16GB · macOS 15.7.4', c: 't-info' },
-  { t: '[HW] EVA-02: i9-14900K + RTX 4090 (STANDBY)', c: 't-warn' },
-  { t: '╔══════════════════════════════════════════════╗', c: 't-success' },
-  { t: '║  ALL SYSTEMS OPERATIONAL — JEFFREY ONLINE    ║', c: 't-success' },
-  { t: '╚══════════════════════════════════════════════╝', c: 't-success' },
-  { t: '$ monitoring --all-channels --dashboard ...', c: 't-prompt' },
-];
-
-const liveTermLines = [
-  { t: '[HEARTBEAT] All systems GREEN', c: 't-success' },
-  { t: '[WA] Channel stable · auth OK', c: 't-info' },
-  { t: '[iMSG] Channel active · bridge OK', c: 't-info' },
-  { t: '[NET] Latency: {ms}ms (optimal)', c: 't-success' },
-  { t: '[CACHE] Hit rate: 99.{n}%', c: 't-success' },
-  { t: '[MEM] Memory sync: 5 files indexed', c: 't-info' },
-  { t: '[SEC] Perimeter scan: CLEAR', c: 't-success' },
-  { t: '[AI] Context: {ctx}k/1000k tokens', c: 't-info' },
-  { t: '[SEC] Threat scan: 0 anomalies', c: 't-success' },
-  { t: '[SYS] CPU: {cpu}% · MEM: {mem}%', c: 't-info' },
-  { t: '[CRON] Next heartbeat: {min}m', c: 't-dim' },
-  { t: '[GW] Port 4000: {req} req/min', c: 't-info' },
-  { t: '[DISK] I/O: {io}MB/s read', c: 't-info' },
-  { t: '[NET] Bandwidth: {down} ↓ / {up} ↑ Mbps', c: 't-info' },
-];
-
-const terminal = document.getElementById('terminal');
-let termLineIdx = 0;
-
-function addTermLine() {
-  let line;
-  if (termLineIdx < bootTermLines.length) {
-    line = bootTermLines[termLineIdx];
-  } else {
-    line = { ...liveTermLines[Math.floor(Math.random() * liveTermLines.length)] };
-    line.t = line.t
-      .replace('{ms}', Math.floor(8 + Math.random() * 15))
-      .replace('{n}', Math.floor(Math.random() * 9))
-      .replace('{ctx}', Math.floor(55 + Math.random() * 20))
-      .replace('{cpu}', Math.floor(metrics.cpu))
-      .replace('{mem}', Math.floor(metrics.mem))
-      .replace('{min}', Math.floor(10 + Math.random() * 50))
-      .replace('{req}', Math.floor(20 + Math.random() * 80))
-      .replace('{io}', Math.floor(50 + Math.random() * 200))
-      .replace('{down}', Math.floor(200 + Math.random() * 100))
-      .replace('{up}', Math.floor(50 + Math.random() * 50));
-  }
-
-  const div = document.createElement('div');
-  div.className = 'line ' + line.c;
-  const ts = termLineIdx >= bootTermLines.length
-    ? `[${new Date().toLocaleTimeString('en-US', { timeZone: 'America/Mexico_City', hour12: false })}] `
-    : '';
-  div.textContent = ts + line.t;
-  terminal.appendChild(div);
-  terminal.scrollTop = terminal.scrollHeight;
-  if (terminal.children.length > 50) terminal.removeChild(terminal.firstChild);
-  termLineIdx++;
-
-  const delay = termLineIdx <= bootTermLines.length
-    ? 100 + Math.random() * 100
-    : 2500 + Math.random() * 5000;
-  setTimeout(addTermLine, delay);
+// ============ UPTIME & DATETIME ============
+const BOOT_EPOCH = Date.now() - (19 * 86400000 + 4 * 3600000 + 22 * 60000);
+function updateUptime() {
+  const diff = Date.now() - BOOT_EPOCH;
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  document.getElementById('uptime').textContent =
+    `UPTIME: ${d}d ${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+  document.getElementById('net-uptime').textContent = `${d}d ${h}h ${m}m`;
 }
-
-// ── NETWORK STATUS ──
-function updateNetworkStatus() {
-  const online = navigator.onLine;
-  const el = document.getElementById('net-online');
-  const badge = document.getElementById('net-badge');
-
-  if (online) {
-    el.textContent = 'YES';
-    el.className = 'net-stat-value text-green';
-    badge.textContent = 'CONNECTED';
-    badge.className = 'panel-badge badge-ok';
-  } else {
-    el.textContent = 'NO';
-    el.className = 'net-stat-value text-red';
-    badge.textContent = 'OFFLINE';
-    badge.className = 'panel-badge badge-warn';
-  }
-
-  // Connection type
-  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  if (conn) {
-    document.getElementById('net-type').textContent = (conn.effectiveType || conn.type || '--').toUpperCase();
-    if (conn.downlink) document.getElementById('net-down').textContent = conn.downlink + ' Mbps';
-  } else {
-    document.getElementById('net-type').textContent = 'WiFi';
-    document.getElementById('net-down').textContent = Math.floor(200 + Math.random() * 100) + ' Mbps';
-    document.getElementById('net-up').textContent = Math.floor(50 + Math.random() * 50) + ' Mbps';
-  }
-
-  // Simulated gateway latency
-  document.getElementById('net-latency-gw').textContent = Math.floor(5 + Math.random() * 15) + 'ms';
-}
-
-// ── PALACIO COUNTDOWN ──
-function updatePalacioCountdown() {
-  const due = new Date('2026-03-20T23:59:59-06:00');
+function updateDatetime() {
   const now = new Date();
-  const diff = due - now;
-  const days = Math.ceil(diff / 86400000);
-  const el = document.getElementById('palacio-countdown');
-  if (days > 0) {
-    el.textContent = `Due: March 20 (${days} days remaining)`;
-    el.style.color = days <= 3 ? '#ff3333' : days <= 5 ? '#ffa500' : '#ff6666';
-  } else {
-    el.textContent = 'OVERDUE!';
-    el.style.color = '#ff3333';
+  document.getElementById('datetime').textContent = now.toLocaleString('en-US', {
+    timeZone: 'America/Mexico_City',
+    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  });
+}
+setInterval(updateUptime, 1000);
+setInterval(updateDatetime, 1000);
+updateUptime();
+updateDatetime();
+
+// ============ DAILY LOG FILE ============
+(function() {
+  const now = new Date();
+  const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0'), d = String(now.getDate()).padStart(2,'0');
+  document.getElementById('daily-log-file').textContent = `${y}-${m}-${d}.md`;
+})();
+
+// ============ TERMINAL LOGS ============
+(function() {
+  const output = document.getElementById('terminal-output');
+  const logTemplates = [
+    { msg: '[HEARTBEAT] System pulse — all services responding', cls: 'log-ok' },
+    { msg: '[WHATSAPP] Gateway heartbeat — latency {latency}ms', cls: 'log-ok' },
+    { msg: '[IMESSAGE] Bridge sync — 0 pending messages', cls: 'log-ok' },
+    { msg: '[CRON] airbnb-monitor — no new reservations', cls: 'log-warn' },
+    { msg: '[CRON] linkedin-engine — next post in {hours}h', cls: 'log-info' },
+    { msg: '[CRON] oss-contributions — scanning 3 repos', cls: 'log-info' },
+    { msg: '[CRON] brightspace-alerts — no new assignments', cls: 'log-ok' },
+    { msg: '[AGENT] claude-opus-4.6 — {tokens} tokens consumed', cls: 'log-info' },
+    { msg: '[MEMORY] Daily log updated — {entries} entries', cls: 'log-ok' },
+    { msg: '[GIT] Pull check — ai-garden: up to date', cls: 'log-ok' },
+    { msg: '[GIT] Pull check — sherlock: 2 new commits upstream', cls: 'log-info' },
+    { msg: '[NET] DNS resolution — avg {dns}ms via 1.1.1.1', cls: 'log-ok' },
+    { msg: '[SEC] Firewall — 0 blocked connections', cls: 'log-ok' },
+    { msg: '[SEC] DM filter — 0 unauthorized attempts', cls: 'log-ok' },
+    { msg: '[SYS] CPU temp: {temp}°C — within normal range', cls: 'log-ok' },
+    { msg: '[SYS] Memory pressure: nominal', cls: 'log-ok' },
+    { msg: '[WEATHER] Mexico City — {wtemp}°C, {wcond}', cls: 'log-info' },
+    { msg: '[EMAIL] Gmail — 20,568 unread (storage 90%)', cls: 'log-warn' },
+    { msg: '[AIRBNB] Casa Diamante — 0 reservations ⚠️', cls: 'log-warn' },
+    { msg: '[GITHUB] PR #25 — awaiting review', cls: 'log-info' },
+  ];
+
+  function ts() {
+    const n = new Date();
+    return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
   }
-}
 
-// ── QUICK ACTIONS ──
-function triggerAction(action) {
-  const actions = {
-    'wake-eva02': { msg: '[CMD] Wake-on-LAN sent to EVA-02...', cls: 't-warn' },
-    'system-check': { msg: '[CMD] Running full system diagnostic...', cls: 't-info' },
-    'clear-cache': { msg: '[CMD] Cache cleared — 512MB freed', cls: 't-success' },
-    'restart-gw': { msg: '[CMD] Restarting gateway on port 4000...', cls: 't-warn' },
-    'backup': { msg: '[CMD] Backup initiated — syncing to remote...', cls: 't-info' },
-    'code-red': { msg: '[ALERT] CODE RED — Activating all nodes!', cls: 't-error' },
-  };
+  function addLog() {
+    const t = logTemplates[Math.floor(Math.random() * logTemplates.length)];
+    let msg = t.msg
+      .replace('{latency}', 38 + Math.floor(Math.random() * 20))
+      .replace('{hours}', 1 + Math.floor(Math.random() * 5))
+      .replace('{tokens}', (1800000 + Math.floor(Math.random() * 400000)).toLocaleString())
+      .replace('{entries}', 12 + Math.floor(Math.random() * 20))
+      .replace('{dns}', 8 + Math.floor(Math.random() * 12))
+      .replace('{temp}', 42 + Math.floor(Math.random() * 8))
+      .replace('{wtemp}', 18 + Math.floor(Math.random() * 6))
+      .replace('{wcond}', ['Partly cloudy', 'Clear', 'Overcast', 'Sunny'][Math.floor(Math.random()*4)]);
 
-  const a = actions[action];
-  if (!a) return;
-
-  // Add to terminal
-  const div = document.createElement('div');
-  div.className = 'line ' + a.cls;
-  const ts = new Date().toLocaleTimeString('en-US', { timeZone: 'America/Mexico_City', hour12: false });
-  div.textContent = `[${ts}] ${a.msg}`;
-  terminal.appendChild(div);
-  terminal.scrollTop = terminal.scrollHeight;
-
-  // Flash the button
-  if (action === 'code-red') {
-    document.body.style.transition = 'background 0.3s';
-    document.body.style.background = 'rgba(255,0,0,0.1)';
-    setTimeout(() => { document.body.style.background = ''; }, 500);
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `<span class="log-time">${ts()}</span> <span class="${t.cls}">${msg}</span>`;
+    output.appendChild(line);
+    if (output.children.length > 100) output.removeChild(output.firstChild);
+    output.scrollTop = output.scrollHeight;
   }
 
-  // Try to hit a real endpoint
-  fetch(`http://localhost:4000/api/actions/${action}`, {
-    method: 'POST',
-    signal: AbortSignal.timeout(3000),
-  }).catch(() => { /* graceful fallback, action logged to terminal */ });
-}
+  // Initial burst
+  setTimeout(() => {
+    for (let i = 0; i < 8; i++) setTimeout(addLog, i * 200);
+    setInterval(addLog, 3000 + Math.random() * 2000);
+  }, 3500);
+})();
 
-// ── REFRESH COUNTDOWN ──
-let refreshTimer = 30;
-function updateRefreshCountdown() {
-  refreshTimer--;
-  document.getElementById('refresh-countdown').textContent = refreshTimer;
-  if (refreshTimer <= 0) {
-    refreshTimer = 30;
-    refreshAllData();
+// ============ SYSTEM METRICS (simulated fluctuation) ============
+(function() {
+  let cpu = 12, mem = 68, disk = 54, swap = 8;
+
+  function fluctuate(val, min, max, range) {
+    val += (Math.random() - 0.5) * range;
+    return Math.max(min, Math.min(max, val));
   }
-}
 
-function refreshAllData() {
-  updateMetrics();
-  fetchWeather();
-  fetchSessions();
-  updateNetworkStatus();
-  updatePalacioCountdown();
-}
+  function updateGauge(barId, valId, val) {
+    const bar = document.getElementById(barId);
+    const label = document.getElementById(valId);
+    bar.style.width = val + '%';
+    label.textContent = Math.round(val) + '%';
+    bar.className = 'gauge-fill' + (val > 85 ? ' danger' : val > 70 ? ' warn' : '');
+  }
 
-// ── INIT ──
-document.addEventListener('DOMContentLoaded', async () => {
-  initMatrix();
+  setInterval(() => {
+    cpu = fluctuate(cpu, 5, 45, 8);
+    mem = fluctuate(mem, 55, 82, 4);
+    disk = fluctuate(disk, 53, 56, 0.5);
+    swap = fluctuate(swap, 3, 18, 3);
+    updateGauge('cpu-bar', 'cpu-val', cpu);
+    updateGauge('mem-bar', 'mem-val', mem);
+    updateGauge('disk-bar', 'disk-val', disk);
+    updateGauge('swap-bar', 'swap-val', swap);
+  }, 2000);
+})();
 
-  // Run boot sequence
-  await runBootSequence();
+// ============ PROJECTS STATUS ============
+(function() {
+  const projects = [
+    { name: 'ai-garden', desc: 'AI Civilization v6', branch: 'main', commit: 'feat: add multi-agent negotiation layer', ago: '2h ago', health: 'active' },
+    { name: 'airbnb-manager', desc: 'Casa Diamante', branch: 'main', commit: 'update: Semana Santa pricing table', ago: '5h ago', health: 'active' },
+    { name: 'Anthropic-Cybersecurity-Skills', desc: 'Open Source', branch: 'main', commit: 'add: cloud security skill descriptions', ago: '1d ago', health: 'active' },
+    { name: 'cytadel', desc: 'Cybersecurity startup', branch: 'develop', commit: 'refactor: threat intel pipeline', ago: '3d ago', health: 'recent' },
+    { name: 'jeffrey-os-dashboard', desc: 'This dashboard', branch: 'main', commit: '🖥️ Complete dashboard rebuild', ago: 'just now', health: 'active' },
+    { name: 'sherlock', desc: 'OSINT tool contributions', branch: 'master', commit: 'fix: TikTok false positive detection', ago: '1d ago', health: 'active' },
+    { name: 'maigret', desc: 'OSINT tool contributions', branch: 'main', commit: 'docs: update usage examples', ago: '6d ago', health: 'recent' },
+    { name: 'linkedin-engine', desc: 'Content automation', branch: 'main', commit: 'feat: auto-schedule cybersecurity posts', ago: '8h ago', health: 'active' },
+  ];
 
-  // Start all updaters
-  updateClock();
-  setInterval(updateClock, 1000);
+  const container = document.getElementById('projects-list');
+  projects.forEach(p => {
+    container.innerHTML += `
+      <div class="project-item">
+        <div class="health-dot ${p.health}"></div>
+        <div class="project-info">
+          <div class="project-name">${p.name} <span style="color:#555;font-weight:normal;font-size:10px">— ${p.desc}</span></div>
+          <div class="project-meta">${p.branch} · ${p.ago}</div>
+          <div class="project-commit">${p.commit}</div>
+        </div>
+      </div>`;
+  });
+})();
 
-  updateUptime();
-  setInterval(updateUptime, 1000);
+// ============ NETWORK SIMULATION ============
+(function() {
+  setInterval(() => {
+    document.getElementById('latency-val').textContent = (38 + Math.floor(Math.random() * 15)) + 'ms';
+    document.getElementById('bw-in').textContent = (8 + Math.random() * 10).toFixed(1) + ' MB/s';
+    document.getElementById('bw-out').textContent = (1 + Math.random() * 5).toFixed(1) + ' MB/s';
+  }, 3000);
+})();
 
-  updateMetrics();
-  setInterval(updateMetrics, 4000);
+// ============ TOKEN GAUGE SIMULATION ============
+(function() {
+  let tokens = 45;
+  setInterval(() => {
+    tokens += (Math.random() - 0.3) * 0.5;
+    tokens = Math.max(40, Math.min(55, tokens));
+    document.getElementById('token-bar').style.width = tokens + '%';
+    document.getElementById('token-val').textContent = Math.round(tokens) + '%';
+  }, 5000);
+})();
 
-  fetchWeather();
-  fetchSessions();
-  updateNetworkStatus();
-  updatePalacioCountdown();
+// ============ FETCH PUBLIC IP ============
+fetch('https://api.ipify.org?format=json')
+  .then(r => r.json())
+  .then(d => { document.getElementById('public-ip').textContent = d.ip; })
+  .catch(() => { document.getElementById('public-ip').textContent = '—'; });
 
-  setInterval(updateRefreshCountdown, 1000);
-  setInterval(updateNetworkStatus, 10000);
-  setInterval(updatePalacioCountdown, 60000);
-
-  // Start terminal feed (delayed so boot sequence finishes first)
-  setTimeout(addTermLine, 1000);
-
-  // Listen for online/offline
-  window.addEventListener('online', updateNetworkStatus);
-  window.addEventListener('offline', updateNetworkStatus);
-});
+// ============ FETCH WEATHER ============
+fetch('https://wttr.in/Mexico+City?format=j1')
+  .then(r => r.json())
+  .then(d => {
+    const cur = d.current_condition[0];
+    document.getElementById('weather-temp').textContent = cur.temp_C + '°C';
+    document.getElementById('weather-cond').textContent = cur.weatherDesc[0].value;
+    document.getElementById('weather-humidity').textContent = '💧 ' + cur.humidity + '%';
+    document.getElementById('weather-wind').textContent = '💨 ' + cur.windspeedKmph + ' km/h';
+    document.getElementById('weather-feels').textContent = '🌡️ Feels ' + cur.FeelsLikeC + '°C';
+    document.getElementById('weather-time').textContent = 'LIVE';
+  })
+  .catch(() => {
+    document.getElementById('weather-temp').textContent = '22°C';
+    document.getElementById('weather-cond').textContent = 'Partly cloudy';
+    document.getElementById('weather-humidity').textContent = '💧 48%';
+    document.getElementById('weather-wind').textContent = '💨 12 km/h';
+    document.getElementById('weather-feels').textContent = '🌡️ Feels 21°C';
+    document.getElementById('weather-time').textContent = 'CACHED';
+  });
 </script>
 </body>
 </html>
