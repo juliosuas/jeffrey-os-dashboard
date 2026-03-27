@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JEFFREY OS v5.0 // COMMAND CENTER</title>
+<title>JEFFREY OS v6.0 // COMMAND CENTER</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
 :root {
   --green: #00ff41;
@@ -12,10 +13,11 @@
   --red: #ff3333;
   --yellow: #ffcc00;
   --orange: #ff8800;
+  --purple: #b44dff;
   --bg: #0a0a0f;
-  --panel-bg: rgba(10, 15, 20, 0.85);
-  --border: rgba(0, 255, 65, 0.25);
-  --glow: 0 0 8px rgba(0, 255, 65, 0.3), inset 0 0 8px rgba(0, 255, 65, 0.05);
+  --panel-bg: rgba(10, 15, 20, 0.88);
+  --border: rgba(0, 255, 65, 0.2);
+  --glow: 0 0 10px rgba(0, 255, 65, 0.25), inset 0 0 10px rgba(0, 255, 65, 0.04);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,382 +28,271 @@ body {
   font-family: 'Share Tech Mono', monospace;
   min-height: 100vh;
   overflow-x: hidden;
-  position: relative;
 }
 
-/* Matrix Rain Canvas */
 #matrix-canvas {
-  position: fixed;
-  top: 0; left: 0;
+  position: fixed; top: 0; left: 0;
   width: 100%; height: 100%;
-  z-index: 0;
-  opacity: 0.06;
-  pointer-events: none;
+  z-index: 0; opacity: 0.05; pointer-events: none;
 }
 
-/* CRT Scanlines */
 .scanlines {
-  position: fixed;
-  top: 0; left: 0;
+  position: fixed; top: 0; left: 0;
   width: 100%; height: 100%;
-  z-index: 9999;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.15) 0px,
-    rgba(0, 0, 0, 0.15) 1px,
-    transparent 1px,
-    transparent 3px
-  );
+  z-index: 9999; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 1px, transparent 1px, transparent 3px);
 }
 
 /* Boot Screen */
 #boot-screen {
-  position: fixed;
-  top: 0; left: 0;
+  position: fixed; top: 0; left: 0;
   width: 100%; height: 100%;
-  background: var(--bg);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: var(--bg); z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
   transition: opacity 0.8s ease;
 }
 #boot-screen.fade-out { opacity: 0; pointer-events: none; }
 #boot-text {
   font-family: 'Share Tech Mono', monospace;
-  color: var(--green);
-  font-size: 14px;
-  max-width: 700px;
-  width: 90%;
-  white-space: pre-wrap;
-  line-height: 1.6;
+  color: var(--green); font-size: 14px;
+  max-width: 700px; width: 90%;
+  white-space: pre-wrap; line-height: 1.6;
 }
 #boot-text .cursor {
-  display: inline-block;
-  width: 8px;
-  height: 14px;
-  background: var(--green);
-  animation: blink 0.6s infinite;
-  vertical-align: middle;
+  display: inline-block; width: 8px; height: 14px;
+  background: var(--green); animation: blink 0.6s infinite; vertical-align: middle;
 }
+@keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
 
 /* Main App */
 #app {
-  position: relative;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity 0.8s ease;
-  min-height: 100vh;
+  position: relative; z-index: 1;
+  opacity: 0; transition: opacity 0.8s ease;
+  min-height: 100vh; padding-bottom: 2rem;
 }
 #app.visible { opacity: 1; }
 
-/* Status Bar */
+/* Top Status Bar */
 .status-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
   padding: 8px 20px;
-  background: rgba(0, 255, 65, 0.05);
+  background: rgba(0, 10, 5, 0.95);
   border-bottom: 1px solid var(--border);
-  font-size: 12px;
-  flex-wrap: wrap;
-  gap: 8px;
+  font-size: 12px; gap: 16px;
+  backdrop-filter: blur(10px);
 }
-.status-bar .hostname { color: var(--cyan); font-weight: bold; }
-.status-bar .uptime { color: var(--green); }
-.status-bar .datetime { color: #888; }
-.status-badge {
-  background: rgba(0, 255, 65, 0.15);
-  border: 1px solid var(--green);
-  color: var(--green);
-  padding: 2px 10px;
-  border-radius: 3px;
-  font-size: 11px;
-  animation: pulse-badge 2s infinite;
+.status-bar .left, .status-bar .right { display: flex; gap: 16px; align-items: center; }
+.status-tag {
+  padding: 2px 8px; border-radius: 3px;
+  border: 1px solid var(--border); background: rgba(0,255,65,0.05);
 }
-@keyframes pulse-badge {
-  0%, 100% { box-shadow: 0 0 4px rgba(0, 255, 65, 0.3); }
-  50% { box-shadow: 0 0 12px rgba(0, 255, 65, 0.6); }
-}
+.status-tag.warn { border-color: var(--yellow); color: var(--yellow); }
+.status-tag.error { border-color: var(--red); color: var(--red); }
 
 /* Header */
 .header {
-  text-align: center;
-  padding: 20px;
-  border-bottom: 1px solid var(--border);
+  text-align: center; padding: 24px 20px 12px;
+  position: relative;
 }
 .header h1 {
   font-family: 'Orbitron', sans-serif;
-  font-size: clamp(18px, 4vw, 32px);
+  font-size: clamp(22px, 4vw, 36px);
   font-weight: 900;
-  color: var(--green);
-  text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
-  letter-spacing: 3px;
+  background: linear-gradient(90deg, var(--green), var(--cyan), var(--green));
+  background-size: 200% auto;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+  letter-spacing: 4px;
 }
-.header h1 .cursor-blink {
-  display: inline-block;
-  width: 3px;
-  height: 1em;
-  background: var(--green);
-  animation: blink 0.8s infinite;
-  vertical-align: middle;
-  margin-left: 8px;
+.header .subtitle {
+  font-size: 12px; color: rgba(0,255,65,0.5);
+  margin-top: 4px; letter-spacing: 2px;
 }
-@keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.header .clock {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(16px, 2.5vw, 24px);
+  color: var(--cyan); margin-top: 8px;
+  text-shadow: 0 0 10px rgba(0,212,255,0.4);
+}
+@keyframes shimmer {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
 
-/* Grid Layout */
-.dashboard-grid {
+/* Grid */
+.grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 16px;
-  padding: 16px;
-  max-width: 1800px;
-  margin: 0 auto;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px; padding: 16px 20px;
+  max-width: 1800px; margin: 0 auto;
 }
 
-/* Panels */
+/* Panel */
 .panel {
   background: var(--panel-bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   box-shadow: var(--glow);
   overflow: hidden;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  backdrop-filter: blur(10px);
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
-.panel.visible {
-  opacity: 1;
-  transform: translateY(0);
+.panel:hover {
+  border-color: rgba(0,255,65,0.4);
+  box-shadow: 0 0 16px rgba(0,255,65,0.2);
 }
 .panel-header {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: var(--cyan);
-  padding: 10px 14px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 2px;
   text-transform: uppercase;
 }
-.panel-header .indicator {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 6px var(--green);
-  animation: pulse-dot 1.5s infinite;
-}
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--green); }
-  50% { opacity: 0.6; box-shadow: 0 0 10px var(--green); }
-}
-.panel-body {
-  padding: 12px 14px;
-  font-size: 12px;
-  line-height: 1.7;
-}
+.panel-header i { width: 16px; height: 16px; }
+.panel-header .icon { color: var(--cyan); }
+.panel-body { padding: 14px 16px; font-size: 13px; line-height: 1.7; }
 
-/* Terminal Panel */
-.panel-terminal { grid-column: 1 / -1; }
-#terminal-output {
-  height: 180px;
-  overflow-y: auto;
-  font-size: 11px;
-  color: var(--green);
-  scrollbar-width: thin;
-  scrollbar-color: var(--green) transparent;
-}
-#terminal-output::-webkit-scrollbar { width: 4px; }
-#terminal-output::-webkit-scrollbar-track { background: transparent; }
-#terminal-output::-webkit-scrollbar-thumb { background: var(--green); border-radius: 2px; }
-.log-line { padding: 1px 0; }
-.log-time { color: #555; }
-.log-info { color: var(--cyan); }
-.log-ok { color: var(--green); }
-.log-warn { color: var(--yellow); }
-.log-err { color: var(--red); }
+/* Column spans */
+.col-3 { grid-column: span 3; }
+.col-4 { grid-column: span 4; }
+.col-6 { grid-column: span 6; }
+.col-8 { grid-column: span 8; }
+.col-12 { grid-column: span 12; }
 
-/* Gauges */
-.gauge { margin: 8px 0; }
-.gauge-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  margin-bottom: 3px;
-}
-.gauge-bar {
-  height: 6px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.gauge-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 1s ease;
-  background: var(--green);
-  box-shadow: 0 0 6px var(--green);
-}
-.gauge-fill.warn { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
-.gauge-fill.danger { background: var(--red); box-shadow: 0 0 6px var(--red); }
+/* Utility */
+.green { color: var(--green); } .cyan { color: var(--cyan); }
+.red { color: var(--red); } .yellow { color: var(--yellow); }
+.orange { color: var(--orange); } .purple { color: var(--purple); }
+.dim { opacity: 0.5; }
+.mono { font-family: 'Share Tech Mono', monospace; }
 
-/* Project Items */
-.project-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 5px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+/* Badge */
+.badge {
+  display: inline-block; padding: 1px 7px;
+  border-radius: 3px; font-size: 10px;
+  font-family: 'Orbitron', sans-serif; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
 }
-.project-item:last-child { border-bottom: none; }
-.health-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  margin-top: 5px;
-  flex-shrink: 0;
-}
-.health-dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
-.health-dot.recent { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
-.health-dot.stale { background: #555; }
-.project-info { flex: 1; min-width: 0; }
-.project-name { color: var(--cyan); font-weight: bold; font-size: 12px; }
-.project-meta { color: #666; font-size: 10px; }
-.project-commit { color: #888; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badge-ok { background: rgba(0,255,65,0.15); color: var(--green); border: 1px solid rgba(0,255,65,0.3); }
+.badge-error { background: rgba(255,51,51,0.15); color: var(--red); border: 1px solid rgba(255,51,51,0.3); }
+.badge-idle { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.15); }
+.badge-running { background: rgba(0,212,255,0.15); color: var(--cyan); border: 1px solid rgba(0,212,255,0.3); animation: pulse 1.5s infinite; }
+.badge-active { background: rgba(0,255,65,0.12); color: var(--green); border: 1px solid rgba(0,255,65,0.25); }
+.badge-recent { background: rgba(255,204,0,0.12); color: var(--yellow); border: 1px solid rgba(255,204,0,0.25); }
+.badge-stale { background: rgba(255,51,51,0.1); color: var(--red); border: 1px solid rgba(255,51,51,0.2); }
+.badge-warn { background: rgba(255,204,0,0.15); color: var(--yellow); border: 1px solid rgba(255,204,0,0.3); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-/* Agent rows */
-.agent-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 3px 0;
-}
-.agent-status {
-  font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 2px;
-  font-weight: bold;
-}
-.agent-status.active { color: var(--green); border: 1px solid var(--green); }
-.agent-status.linked { color: var(--cyan); border: 1px solid var(--cyan); }
-.agent-status.ok { color: var(--yellow); border: 1px solid rgba(255,204,0,0.4); }
+/* Bar chart */
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.bar-label { width: 50px; text-align: right; font-size: 11px; opacity: 0.7; }
+.bar-track { flex: 1; height: 18px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; position: relative; }
+.bar-fill.green-bar { background: linear-gradient(90deg, rgba(0,255,65,0.3), rgba(0,255,65,0.7)); }
+.bar-fill.cyan-bar { background: linear-gradient(90deg, rgba(0,212,255,0.3), rgba(0,212,255,0.7)); }
+.bar-fill.yellow-bar { background: linear-gradient(90deg, rgba(255,204,0,0.3), rgba(255,204,0,0.7)); }
+.bar-fill.red-bar { background: linear-gradient(90deg, rgba(255,51,51,0.3), rgba(255,51,51,0.7)); }
+.bar-val { font-size: 11px; min-width: 48px; text-align: right; }
 
-/* Memory files */
-.mem-file {
-  display: inline-block;
-  background: rgba(0,212,255,0.1);
-  border: 1px solid rgba(0,212,255,0.2);
-  padding: 2px 6px;
-  margin: 2px;
-  border-radius: 3px;
-  font-size: 10px;
-  color: var(--cyan);
-}
+/* Cron table */
+.cron-group-title { font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--cyan); margin: 10px 0 6px; border-bottom: 1px solid rgba(0,212,255,0.15); padding-bottom: 3px; }
+.cron-group-title:first-child { margin-top: 0; }
+.cron-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
+.cron-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cron-time { font-size: 10px; opacity: 0.5; min-width: 70px; text-align: right; }
 
-/* Info Rows */
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 3px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-}
-.info-row:last-child { border-bottom: none; }
-.info-label { color: #666; }
-.info-value { color: var(--green); text-align: right; }
-.info-value.warn { color: var(--yellow); }
-.info-value.danger { color: var(--red); }
-.info-value.cyan { color: var(--cyan); }
+/* Projects list */
+.proj-list { max-height: 360px; overflow-y: auto; }
+.proj-list::-webkit-scrollbar { width: 4px; }
+.proj-list::-webkit-scrollbar-track { background: transparent; }
+.proj-list::-webkit-scrollbar-thumb { background: rgba(0,255,65,0.2); border-radius: 2px; }
+.proj-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.proj-name { min-width: 140px; color: var(--cyan); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proj-msg { flex: 1; opacity: 0.6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.proj-time { font-size: 10px; opacity: 0.4; min-width: 70px; text-align: right; }
+.proj-dirty { color: var(--yellow); font-size: 10px; }
 
-/* Security rules */
-.sec-rule {
-  display: flex;
-  justify-content: space-between;
-  padding: 3px 0;
+/* Price calendar */
+.price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0; }
+.price-card {
+  text-align: center; padding: 8px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: rgba(0,255,65,0.03);
 }
-.sec-status { font-weight: bold; }
-.sec-status.locked { color: var(--green); }
-.sec-status.revoked { color: var(--red); }
-.sec-status.restricted { color: var(--yellow); }
-.sec-status.enabled { color: var(--green); }
-.sec-status.disabled { color: #666; }
-
-/* GitHub Contribution Squares */
-.contrib-squares {
-  display: flex;
-  gap: 3px;
-  margin: 6px 0;
-}
-.contrib-sq {
-  width: 12px; height: 12px;
-  border-radius: 2px;
-  background: rgba(0, 255, 65, 0.1);
-}
-.contrib-sq.l1 { background: rgba(0, 255, 65, 0.25); }
-.contrib-sq.l2 { background: rgba(0, 255, 65, 0.45); }
-.contrib-sq.l3 { background: rgba(0, 255, 65, 0.7); }
-.contrib-sq.l4 { background: var(--green); }
-
-/* PR items */
-.pr-item {
-  padding: 3px 0;
-  font-size: 11px;
-  color: #888;
-}
-.pr-item .pr-num { color: var(--cyan); }
-
-/* Pricing table */
-.price-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 2px 0;
-  font-size: 11px;
-}
-.price-peak { color: var(--orange); font-weight: bold; }
+.price-card .price { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; }
+.price-card .label { font-size: 10px; opacity: 0.5; margin-top: 2px; }
 
 /* Weather */
-.weather-main {
-  text-align: center;
-  padding: 8px 0;
-}
-.weather-temp {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 28px;
-  color: var(--cyan);
-  text-shadow: 0 0 10px rgba(0,212,255,0.4);
-}
-.weather-cond { color: #888; font-size: 13px; margin-top: 4px; }
-.weather-details {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 10px;
-  font-size: 11px;
-  color: #666;
-}
+.weather-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.weather-card { text-align: center; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: rgba(0,212,255,0.03); }
+.weather-card .temp { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900; color: var(--cyan); }
+.weather-card .loc { font-size: 11px; opacity: 0.6; margin-bottom: 4px; }
+.weather-card .desc { font-size: 11px; opacity: 0.5; margin-top: 2px; }
 
-/* Footer */
-.footer {
-  text-align: center;
-  padding: 16px;
-  font-size: 11px;
-  color: #444;
-  border-top: 1px solid var(--border);
+/* Model strategy */
+.model-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.model-tag { font-family: 'Orbitron', sans-serif; font-size: 10px; padding: 2px 8px; border-radius: 3px; }
+.model-tag.sonnet { background: rgba(0,212,255,0.15); color: var(--cyan); border: 1px solid rgba(0,212,255,0.3); }
+.model-tag.opus { background: rgba(180,77,255,0.15); color: var(--purple); border: 1px solid rgba(180,77,255,0.3); }
+
+/* Activity log */
+.log-entry { padding: 3px 0; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+.log-time { color: var(--cyan); opacity: 0.5; font-size: 10px; }
+
+/* Countdown */
+.countdown {
+  font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 900;
+  text-align: center; padding: 10px;
+  color: var(--yellow); text-shadow: 0 0 12px rgba(255,204,0,0.4);
 }
-.footer span { color: var(--cyan); }
+.countdown .label { font-size: 10px; opacity: 0.5; letter-spacing: 2px; margin-bottom: 4px; }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .dashboard-grid { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
-  .panel-terminal { grid-column: 1; }
-  .status-bar { font-size: 10px; padding: 6px 10px; }
-  #terminal-output { height: 140px; }
+@media (max-width: 1200px) {
+  .col-3 { grid-column: span 4; }
+  .col-4 { grid-column: span 6; }
+  .col-8 { grid-column: span 12; }
 }
+@media (max-width: 768px) {
+  .grid { gap: 10px; padding: 10px; }
+  .col-3, .col-4, .col-6, .col-8, .col-12 { grid-column: span 12; }
+  .status-bar { flex-wrap: wrap; font-size: 10px; gap: 6px; padding: 6px 10px; }
+  .header h1 { font-size: 20px; letter-spacing: 2px; }
+  .price-grid { grid-template-columns: 1fr; }
+  .weather-grid { grid-template-columns: 1fr; }
+}
+
+/* Fade-in animation for panels */
+.panel { animation: fadeUp 0.5s ease both; }
+.panel:nth-child(1) { animation-delay: 0.05s; }
+.panel:nth-child(2) { animation-delay: 0.1s; }
+.panel:nth-child(3) { animation-delay: 0.15s; }
+.panel:nth-child(4) { animation-delay: 0.2s; }
+.panel:nth-child(5) { animation-delay: 0.25s; }
+.panel:nth-child(6) { animation-delay: 0.3s; }
+.panel:nth-child(7) { animation-delay: 0.35s; }
+.panel:nth-child(8) { animation-delay: 0.4s; }
+.panel:nth-child(9) { animation-delay: 0.45s; }
+.panel:nth-child(10) { animation-delay: 0.5s; }
+.panel:nth-child(11) { animation-delay: 0.55s; }
+.panel:nth-child(12) { animation-delay: 0.6s; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.kv { display: flex; justify-content: space-between; padding: 2px 0; }
+.kv .k { opacity: 0.5; }
+.section-title { font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--cyan); margin: 8px 0 4px; }
+.warning-box { background: rgba(255,204,0,0.08); border: 1px solid rgba(255,204,0,0.3); border-radius: 4px; padding: 8px 12px; color: var(--yellow); font-size: 12px; margin: 8px 0; }
+.plant-anim { font-size: 24px; animation: sway 2s ease-in-out infinite; display: inline-block; }
+@keyframes sway { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
 </style>
 </head>
 <body>
+
 <canvas id="matrix-canvas"></canvas>
 <div class="scanlines"></div>
 
@@ -414,582 +305,609 @@ body {
 <div id="app">
   <!-- Status Bar -->
   <div class="status-bar">
-    <span class="hostname">MAGI :: Mac mini M4</span>
-    <span class="uptime" id="uptime">UPTIME: 00d 00h 00m 00s</span>
-    <span class="datetime" id="datetime">--</span>
-    <span class="status-badge">● ALL SYSTEMS OPERATIONAL</span>
+    <div class="left">
+      <span class="status-tag" id="sb-model">SONNET 4.6</span>
+      <span class="dim">|</span>
+      <span id="sb-uptime">UPTIME: --</span>
+      <span class="dim">|</span>
+      <span id="sb-host">Mac mini M4</span>
+    </div>
+    <div class="right">
+      <span id="sb-updated">LAST SYNC: --</span>
+      <span class="dim">|</span>
+      <span id="sb-ip">IP: --</span>
+    </div>
   </div>
 
   <!-- Header -->
   <div class="header">
-    <h1>JEFFREY OS v5.0 // COMMAND CENTER<span class="cursor-blink"></span></h1>
+    <h1>JEFFREY OS v6.0</h1>
+    <div class="subtitle">AI BUTLER COMMAND CENTER // BUENOS DIAS, JULIO</div>
+    <div class="clock" id="main-clock">--:--:--</div>
   </div>
 
-  <!-- Dashboard Grid -->
-  <div class="dashboard-grid">
+  <!-- Grid -->
+  <div class="grid">
 
-    <!-- 1. LIVE TERMINAL -->
-    <div class="panel panel-terminal" data-delay="0">
-      <div class="panel-header">
-        <span>▶ LIVE TERMINAL</span>
-        <div class="indicator"></div>
-      </div>
-      <div class="panel-body">
-        <div id="terminal-output"></div>
-      </div>
-    </div>
-
-    <!-- 2. SYSTEM METRICS -->
-    <div class="panel" data-delay="100">
-      <div class="panel-header">
-        <span>◈ SYSTEM METRICS</span>
-        <div class="indicator"></div>
-      </div>
-      <div class="panel-body">
-        <div class="gauge">
-          <div class="gauge-label"><span>CPU</span><span id="cpu-val">12%</span></div>
-          <div class="gauge-bar"><div class="gauge-fill" id="cpu-bar" style="width:12%"></div></div>
-        </div>
-        <div class="gauge">
-          <div class="gauge-label"><span>MEMORY</span><span id="mem-val">68%</span></div>
-          <div class="gauge-bar"><div class="gauge-fill" id="mem-bar" style="width:68%"></div></div>
-        </div>
-        <div class="gauge">
-          <div class="gauge-label"><span>DISK (512GB SSD)</span><span id="disk-val">54%</span></div>
-          <div class="gauge-bar"><div class="gauge-fill" id="disk-bar" style="width:54%"></div></div>
-        </div>
-        <div class="gauge">
-          <div class="gauge-label"><span>SWAP</span><span id="swap-val">8%</span></div>
-          <div class="gauge-bar"><div class="gauge-fill" id="swap-bar" style="width:8%"></div></div>
-        </div>
-        <div style="margin-top:8px;font-size:10px;color:#555">
-          Apple M4 · 24GB Unified Memory · macOS 15.7
+    <!-- 1. SYSTEM METRICS -->
+    <div class="panel col-4" id="p-system">
+      <div class="panel-header"><span class="icon"><i data-lucide="cpu"></i></span> SYSTEM METRICS</div>
+      <div class="panel-body" id="system-body">
+        <div class="bar-row"><span class="bar-label">CPU</span><div class="bar-track"><div class="bar-fill green-bar" id="cpu-bar" style="width:0%"></div></div><span class="bar-val" id="cpu-val">--</span></div>
+        <div class="bar-row"><span class="bar-label">RAM</span><div class="bar-track"><div class="bar-fill cyan-bar" id="ram-bar" style="width:0%"></div></div><span class="bar-val" id="ram-val">--</span></div>
+        <div class="bar-row"><span class="bar-label">DISK</span><div class="bar-track"><div class="bar-fill yellow-bar" id="disk-bar" style="width:0%"></div></div><span class="bar-val" id="disk-val">--</span></div>
+        <div style="margin-top:10px;">
+          <div class="kv"><span class="k">Hostname</span><span id="sys-host">--</span></div>
+          <div class="kv"><span class="k">OS</span><span id="sys-os">--</span></div>
+          <div class="kv"><span class="k">Arch</span><span id="sys-arch">--</span></div>
         </div>
       </div>
     </div>
 
-    <!-- 3. PROJECTS STATUS -->
-    <div class="panel" data-delay="200">
-      <div class="panel-header">
-        <span>◈ PROJECTS STATUS</span>
-        <span style="color:#666;font-family:'Share Tech Mono';font-size:10px">8 REPOS</span>
-      </div>
-      <div class="panel-body" id="projects-list">
-        <!-- Filled by JS -->
-      </div>
-    </div>
+    <!-- 2. AIRBNB COMMAND CENTER -->
+    <div class="panel col-4" id="p-airbnb">
+      <div class="panel-header"><span class="icon"><i data-lucide="home"></i></span> AIRBNB COMMAND CENTER</div>
+      <div class="panel-body" id="airbnb-body">
+        <div class="kv"><span class="k">Listing</span><span id="ab-listing" class="cyan">--</span></div>
+        <div class="kv"><span class="k">Location</span><span id="ab-location">--</span></div>
+        <div class="kv"><span class="k">Min Stay</span><span id="ab-minstay">--</span></div>
+        <div class="kv"><span class="k">Bookings</span><span id="ab-bookings" class="yellow">--</span></div>
+        <div class="kv"><span class="k">Last Check</span><span id="ab-lastcheck" class="dim">--</span></div>
 
-    <!-- 4. AGENTS & MEMORY -->
-    <div class="panel" data-delay="300">
-      <div class="panel-header">
-        <span>◈ AGENTS &amp; MEMORY</span>
-        <div class="indicator"></div>
-      </div>
-      <div class="panel-body">
-        <div style="margin-bottom:8px;color:#555;font-size:10px;letter-spacing:1px">ACTIVE SESSIONS</div>
-        <div class="agent-row">
-          <span>Main Session (claude-opus-4.6)</span>
-          <span class="agent-status active">ACTIVE</span>
+        <div class="section-title">PRICE CALENDAR</div>
+        <div class="price-grid">
+          <div class="price-card"><div class="price green" id="ab-price-ss1">--</div><div class="label">SEMANA SANTA<br>Mar 29 - Apr 5</div></div>
+          <div class="price-card"><div class="price cyan" id="ab-price-ss2">--</div><div class="label">WEEK 2<br>Apr 6 - Apr 12</div></div>
+          <div class="price-card"><div class="price" id="ab-price-reg">--</div><div class="label">REGULAR<br>Per Night</div></div>
         </div>
-        <div class="agent-row">
-          <span>WhatsApp Gateway</span>
-          <span class="agent-status linked">LINKED</span>
-        </div>
-        <div class="agent-row">
-          <span>iMessage Bridge</span>
-          <span class="agent-status active">ACTIVE</span>
-        </div>
-        <div style="margin:8px 0 4px;color:#555;font-size:10px;letter-spacing:1px">CRON JOBS</div>
-        <div class="agent-row">
-          <span>Airbnb Monitor (5x daily)</span>
-          <span class="agent-status ok">OK</span>
-        </div>
-        <div class="agent-row">
-          <span>LinkedIn Posts (3x daily)</span>
-          <span class="agent-status ok">OK</span>
-        </div>
-        <div class="agent-row">
-          <span>Brightspace Alerts (4x weekly)</span>
-          <span class="agent-status ok">OK</span>
-        </div>
-        <div class="agent-row">
-          <span>OSS Contributions (3x daily)</span>
-          <span class="agent-status ok">OK</span>
-        </div>
-        <div style="margin:10px 0 4px;color:#555;font-size:10px;letter-spacing:1px">MEMORY FILES</div>
-        <div>
-          <span class="mem-file">MEMORY.md</span>
-          <span class="mem-file">SOUL.md</span>
-          <span class="mem-file">USER.md</span>
-          <span class="mem-file">TOOLS.md</span>
-          <span class="mem-file" id="daily-log-file">2026-03-24.md</span>
+
+        <div id="ab-warning"></div>
+
+        <div class="countdown" id="ss-countdown">
+          <div class="label">SEMANA SANTA COUNTDOWN</div>
+          <div id="ss-days">--</div>
         </div>
       </div>
     </div>
 
-    <!-- 5. TOKENS & IP -->
-    <div class="panel" data-delay="400">
-      <div class="panel-header">
-        <span>◈ TOKENS &amp; IP</span>
-        <span style="color:#666;font-family:'Share Tech Mono';font-size:10px">IDENTITY</span>
-      </div>
-      <div class="panel-body">
-        <div class="info-row"><span class="info-label">Local IP</span><span class="info-value">192.168.1.82</span></div>
-        <div class="info-row"><span class="info-label">Public IP</span><span class="info-value cyan" id="public-ip">fetching...</span></div>
-        <div class="info-row"><span class="info-label">Host</span><span class="info-value">Mac mini M4 (24/7)</span></div>
-        <div class="info-row"><span class="info-label">AI Model</span><span class="info-value cyan">claude-opus-4.6</span></div>
-        <div class="info-row"><span class="info-label">Plan</span><span class="info-value">OpenClaw Pro</span></div>
-        <div class="gauge" style="margin-top:10px">
-          <div class="gauge-label"><span>TOKEN USAGE</span><span id="token-val">45%</span></div>
-          <div class="gauge-bar"><div class="gauge-fill" id="token-bar" style="width:45%"></div></div>
-        </div>
-        <div style="font-size:10px;color:#555;margin-top:4px">~2.1M / 4.7M tokens this billing cycle</div>
-      </div>
-    </div>
-
-    <!-- 6. FIREWALL & SECURITY -->
-    <div class="panel" data-delay="500">
-      <div class="panel-header">
-        <span>◈ FIREWALL &amp; SECURITY</span>
-        <span style="color:var(--green);font-size:10px">🔒 SECURED</span>
-      </div>
-      <div class="panel-body">
-        <div style="margin-bottom:6px;color:#555;font-size:10px;letter-spacing:1px">DM POLICY</div>
-        <div class="sec-rule"><span>Julio</span><span class="sec-status locked">ALLOWED 🔒</span></div>
-        <div class="sec-rule"><span>Dan HD</span><span class="sec-status revoked">ACCESS REVOKED ⛔</span></div>
-        <div class="sec-rule"><span>Kevin</span><span class="sec-status restricted">GROUP ONLY</span></div>
-        <div class="sec-rule"><span>All contacts</span><span class="sec-status restricted">GROUP ONLY</span></div>
-        <div style="margin:10px 0 6px;color:#555;font-size:10px;letter-spacing:1px">SYSTEM</div>
-        <div class="sec-rule"><span>macOS Firewall</span><span class="sec-status enabled">ENABLED</span></div>
-        <div class="sec-rule"><span>SSH</span><span class="sec-status disabled">DISABLED</span></div>
-        <div class="sec-rule"><span>Open Ports</span><span class="sec-status enabled">8090 (dashboard)</span></div>
-      </div>
-    </div>
-
-    <!-- 7. NETWORK -->
-    <div class="panel" data-delay="600">
-      <div class="panel-header">
-        <span>◈ NETWORK</span>
-        <div class="indicator"></div>
-      </div>
-      <div class="panel-body">
-        <div class="info-row"><span class="info-label">Gateway</span><span class="info-value" style="color:var(--green)">● WhatsApp CONNECTED</span></div>
-        <div class="info-row"><span class="info-label">Latency</span><span class="info-value" id="latency-val">45ms</span></div>
-        <div class="info-row"><span class="info-label">Uptime</span><span class="info-value" id="net-uptime">19d 4h 22m</span></div>
-        <div class="info-row"><span class="info-label">Bandwidth IN</span><span class="info-value" id="bw-in">12.4 MB/s</span></div>
-        <div class="info-row"><span class="info-label">Bandwidth OUT</span><span class="info-value" id="bw-out">3.2 MB/s</span></div>
-        <div class="info-row"><span class="info-label">DNS</span><span class="info-value cyan">1.1.1.1 (Cloudflare)</span></div>
-        <div class="info-row"><span class="info-label">Protocol</span><span class="info-value">WebSocket / TLS 1.3</span></div>
-      </div>
-    </div>
-
-    <!-- 8. GITHUB STATUS -->
-    <div class="panel" data-delay="700">
-      <div class="panel-header">
-        <span>◈ GITHUB STATUS</span>
-        <span style="color:#666;font-family:'Share Tech Mono';font-size:10px">juliosuas</span>
-      </div>
-      <div class="panel-body">
-        <div class="info-row"><span class="info-label">Open PRs</span><span class="info-value">8 <span style="color:#666">(3 Sherlock, 5 Anthropic)</span></span></div>
-        <div class="info-row"><span class="info-label">Merged (March)</span><span class="info-value">7</span></div>
-        <div style="margin:8px 0 4px;color:#555;font-size:10px">CONTRIBUTIONS TODAY</div>
-        <div class="contrib-squares">
-          <div class="contrib-sq l1"></div><div class="contrib-sq l2"></div><div class="contrib-sq l4"></div>
-          <div class="contrib-sq l3"></div><div class="contrib-sq l2"></div><div class="contrib-sq l1"></div>
-          <div class="contrib-sq l3"></div><div class="contrib-sq l4"></div><div class="contrib-sq l2"></div>
-          <div class="contrib-sq l1"></div><div class="contrib-sq"></div><div class="contrib-sq l1"></div>
-          <div class="contrib-sq l2"></div><div class="contrib-sq l3"></div>
-        </div>
-        <div style="margin-top:6px;color:#555;font-size:10px">RECENT ACTIVITY</div>
-        <div class="pr-item"><span class="pr-num">PR #25</span> — Cloud security skill descriptions</div>
-        <div class="pr-item"><span class="pr-num">PR #18</span> — Sherlock: fix TikTok false positives</div>
-        <div class="pr-item"><span class="pr-num">PR #42</span> — Add threat modeling skill</div>
-        <div style="margin-top:6px;font-size:10px;color:#555">
-          <a href="https://github.com/juliosuas" style="color:var(--cyan);text-decoration:none">github.com/juliosuas</a>
+    <!-- 3. GITHUB OSS PIPELINE -->
+    <div class="panel col-4" id="p-oss">
+      <div class="panel-header"><span class="icon"><i data-lucide="git-pull-request"></i></span> GITHUB OSS PIPELINE</div>
+      <div class="panel-body" id="oss-body">
+        <div class="section-title">DAILY PIPELINE</div>
+        <div id="oss-pipeline"></div>
+        <div style="margin-top:12px;">
+          <div class="kv"><span class="k">Strategy</span><span>Scout → Execute → Report</span></div>
+          <div class="kv"><span class="k">Target</span><span class="cyan">High-impact OSS PRs</span></div>
         </div>
       </div>
     </div>
 
-    <!-- 9. AIRBNB / CASA DIAMANTE -->
-    <div class="panel" data-delay="800">
-      <div class="panel-header">
-        <span>◈ AIRBNB / CASA DIAMANTE</span>
-        <span style="color:var(--green);font-size:10px">LISTED ✅</span>
-      </div>
-      <div class="panel-body">
-        <div class="info-row"><span class="info-label">Status</span><span class="info-value">LISTED ✅</span></div>
-        <div class="info-row"><span class="info-label">Instant Book</span><span class="info-value">ON</span></div>
-        <div class="info-row"><span class="info-label">Min Stay</span><span class="info-value">2 nights (holidays)</span></div>
-        <div class="info-row"><span class="info-label">Reservations</span><span class="info-value warn">0 ⚠️</span></div>
-        <div style="margin:10px 0 4px;color:#555;font-size:10px;letter-spacing:1px">SEMANA SANTA PRICING</div>
-        <div class="price-row"><span>Mar 29 – Apr 5</span><span class="price-peak">$4,500/night (PEAK)</span></div>
-        <div class="price-row"><span>Apr 6 – Apr 12</span><span style="color:var(--yellow)">$3,500/night</span></div>
-        <div style="margin-top:8px;font-size:10px;color:#555">
-          <a href="https://juliosuas.github.io/airbnb-manager" style="color:var(--cyan);text-decoration:none">juliosuas.github.io/airbnb-manager</a>
+    <!-- 4. CRON JOBS -->
+    <div class="panel col-8" id="p-crons">
+      <div class="panel-header"><span class="icon"><i data-lucide="clock"></i></span> CRON JOBS <span class="dim" style="margin-left:auto;font-family:'Share Tech Mono';font-size:10px;" id="cron-count">--</span></div>
+      <div class="panel-body" id="crons-body"></div>
+    </div>
+
+    <!-- 5. LINKEDIN ENGINE -->
+    <div class="panel col-4" id="p-linkedin">
+      <div class="panel-header"><span class="icon"><i data-lucide="linkedin"></i></span> LINKEDIN ENGINE</div>
+      <div class="panel-body" id="linkedin-body">
+        <div class="kv"><span class="k">Profile</span><span class="cyan" id="li-profile">--</span></div>
+        <div class="kv"><span class="k">Post Schedule</span><span id="li-posts">--</span></div>
+        <div class="kv"><span class="k">Network Growth</span><span id="li-growth">--</span></div>
+        <div class="kv"><span class="k">Language</span><span id="li-lang">--</span></div>
+        <div class="kv"><span class="k">Last Network Run</span><span id="li-lastrun" class="dim">--</span></div>
+        <div style="margin-top:10px;">
+          <div class="section-title">CONTENT STRATEGY</div>
+          <div style="font-size:11px; opacity:0.6; line-height:1.5;">
+            Posts auto-generated from GitHub activity.<br>
+            3x daily: 10am / 4pm / 10pm<br>
+            Network expansion: Monday 11am
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 10. LINKEDIN -->
-    <div class="panel" data-delay="900">
-      <div class="panel-header">
-        <span>◈ LINKEDIN</span>
-        <span style="color:var(--cyan);font-size:10px">ENGINE ACTIVE</span>
-      </div>
+    <!-- 6. PROJECTS -->
+    <div class="panel col-8" id="p-projects">
+      <div class="panel-header"><span class="icon"><i data-lucide="folder-git-2"></i></span> PROJECTS <span class="dim" style="margin-left:auto;font-family:'Share Tech Mono';font-size:10px;" id="proj-count">--</span></div>
       <div class="panel-body">
-        <div class="info-row"><span class="info-label">Profile</span><span class="info-value cyan">juliosuas</span></div>
-        <div style="font-size:10px;color:#888;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03)">
-          "Founder &amp; CEO @ Cytadel | Cybersecurity Researcher | CEH"
+        <div class="proj-list" id="proj-list"></div>
+      </div>
+    </div>
+
+    <!-- 7. AI GARDEN -->
+    <div class="panel col-4" id="p-garden">
+      <div class="panel-header"><span class="icon"><i data-lucide="flower-2"></i></span> AI GARDEN</div>
+      <div class="panel-body" id="garden-body">
+        <div style="text-align:center; margin-bottom:10px;">
+          <span class="plant-anim">🌱</span>
+          <span class="plant-anim" style="animation-delay:0.3s;">🌿</span>
+          <span class="plant-anim" style="animation-delay:0.6s;">🌻</span>
         </div>
-        <div class="info-row"><span class="info-label">Posts this week</span><span class="info-value">3</span></div>
-        <div class="info-row"><span class="info-label">Impressions</span><span class="info-value">91+</span></div>
-        <div class="info-row"><span class="info-label">Auto-post</span><span class="info-value">ACTIVE</span></div>
-        <div class="info-row"><span class="info-label">Next post</span><span class="info-value warn">Scheduled</span></div>
-        <div style="margin-top:6px;font-size:10px;color:#555">
-          <a href="https://linkedin.com/in/juliosuas" style="color:var(--cyan);text-decoration:none">linkedin.com/in/juliosuas</a>
+        <div class="kv"><span class="k">Citizens</span><span id="g-citizens" class="cyan">--</span></div>
+        <div class="kv"><span class="k">Plants</span><span id="g-plants" class="green">--</span></div>
+        <div class="kv"><span class="k">Events</span><span id="g-events">--</span></div>
+        <div class="kv"><span class="k">Factions</span><span id="g-factions">--</span></div>
+        <div class="kv"><span class="k">Version</span><span id="g-version">--</span></div>
+        <div class="kv"><span class="k">Last Updated</span><span id="g-updated" class="dim">--</span></div>
+      </div>
+    </div>
+
+    <!-- 8. BRIGHTSPACE ACADEMIC -->
+    <div class="panel col-4" id="p-brightspace">
+      <div class="panel-header"><span class="icon"><i data-lucide="graduation-cap"></i></span> BRIGHTSPACE ACADEMIC</div>
+      <div class="panel-body" id="brightspace-body">
+        <div class="section-title">WEEKLY PIPELINE</div>
+        <div id="bs-pipeline"></div>
+        <div style="margin-top:10px; font-size:11px; opacity:0.5;">
+          Automated academic workflow:<br>
+          Wed audit → Thu execute → Sat submit
         </div>
       </div>
     </div>
 
-    <!-- 11. EMAIL (Gmail) -->
-    <div class="panel" data-delay="1000">
-      <div class="panel-header">
-        <span>◈ EMAIL (GMAIL)</span>
-        <span style="color:var(--yellow);font-size:10px">⚠️ STORAGE</span>
-      </div>
-      <div class="panel-body">
-        <div class="info-row"><span class="info-label">Account</span><span class="info-value">juliosuas@gmail.com</span></div>
-        <div class="info-row"><span class="info-label">Unread</span><span class="info-value danger">20,568</span></div>
-        <div class="gauge" style="margin:6px 0">
-          <div class="gauge-label"><span>Storage</span><span style="color:var(--yellow)">90% (13.51/15 GB) ⚠️</span></div>
-          <div class="gauge-bar"><div class="gauge-fill warn" style="width:90%"></div></div>
+    <!-- 9. MODEL STRATEGY -->
+    <div class="panel col-4" id="p-model">
+      <div class="panel-header"><span class="icon"><i data-lucide="brain"></i></span> MODEL STRATEGY</div>
+      <div class="panel-body" id="model-body">
+        <div class="kv"><span class="k">Plan</span><span id="m-plan" class="cyan">--</span></div>
+        <div style="margin-top:8px;">
+          <div class="section-title">TASK ROUTING</div>
+          <div class="model-row"><span class="model-tag sonnet">SONNET</span><span style="flex:1;font-size:11px;">Daily ops, crons, writing, research</span></div>
+          <div class="model-row"><span class="model-tag opus">OPUS</span><span style="flex:1;font-size:11px;">Architecture, debugging, CTO mode</span></div>
         </div>
-        <div class="info-row"><span class="info-label">Last important</span><span class="info-value">Cloudflare recruiter ✅</span></div>
-        <div class="info-row"><span class="info-label">Brightspace</span><span class="info-value">Alerts configured</span></div>
+        <div style="margin-top:10px;">
+          <div class="section-title">SPEED VS INTELLIGENCE</div>
+          <div class="bar-row"><span class="bar-label" style="width:60px; font-size:10px;">Speed</span><div class="bar-track"><div class="bar-fill cyan-bar" style="width:90%"></div></div></div>
+          <div style="text-align:center; font-size:10px; opacity:0.3;">SONNET — fast daily driver</div>
+          <div class="bar-row" style="margin-top:6px;"><span class="bar-label" style="width:60px; font-size:10px;">Intel</span><div class="bar-track"><div class="bar-fill" style="width:95%; background:linear-gradient(90deg,rgba(180,77,255,0.3),rgba(180,77,255,0.7)); border-radius:3px;"></div></div></div>
+          <div style="text-align:center; font-size:10px; opacity:0.3;">OPUS — maximum reasoning</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. INFRASTRUCTURE -->
+    <div class="panel col-4" id="p-infra">
+      <div class="panel-header"><span class="icon"><i data-lucide="server"></i></span> INFRASTRUCTURE</div>
+      <div class="panel-body" id="infra-body">
+        <div class="kv"><span class="k">Host</span><span id="i-host" class="cyan">--</span></div>
+        <div class="kv"><span class="k">OS</span><span id="i-os">--</span></div>
+        <div class="kv"><span class="k">Arch</span><span id="i-arch">--</span></div>
+        <div class="kv"><span class="k">Dashboard</span><span class="green">ONLINE :8080</span></div>
+        <div class="kv"><span class="k">Gateway</span><span class="green">ACTIVE</span></div>
+        <div class="kv"><span class="k">WhatsApp</span><span class="green">CONNECTED</span></div>
+        <div class="kv"><span class="k">State Refresh</span><span>Every 15s</span></div>
+      </div>
+    </div>
+
+    <!-- 11. SECURITY / ACTIVITY LOG -->
+    <div class="panel col-4" id="p-activity">
+      <div class="panel-header"><span class="icon"><i data-lucide="shield"></i></span> ACTIVITY LOG</div>
+      <div class="panel-body" id="activity-body">
+        <div id="activity-log"></div>
       </div>
     </div>
 
     <!-- 12. WEATHER -->
-    <div class="panel" data-delay="1100">
-      <div class="panel-header">
-        <span>◈ WEATHER — MEXICO CITY</span>
-        <span style="color:#666;font-family:'Share Tech Mono';font-size:10px" id="weather-time">--</span>
-      </div>
-      <div class="panel-body">
-        <div class="weather-main">
-          <div class="weather-temp" id="weather-temp">--°C</div>
-          <div class="weather-cond" id="weather-cond">Loading...</div>
+    <div class="panel col-4" id="p-weather">
+      <div class="panel-header"><span class="icon"><i data-lucide="cloud-sun"></i></span> WEATHER</div>
+      <div class="panel-body" id="weather-body">
+        <div class="weather-grid" id="weather-grid">
+          <div class="weather-card">
+            <div class="loc">ACAPULCO</div>
+            <div class="temp" id="w-acapulco-temp">--</div>
+            <div class="desc" id="w-acapulco-desc">Loading...</div>
+          </div>
+          <div class="weather-card">
+            <div class="loc">MEXICO CITY</div>
+            <div class="temp" id="w-cdmx-temp">--</div>
+            <div class="desc" id="w-cdmx-desc">Loading...</div>
+          </div>
         </div>
-        <div class="weather-details">
-          <span id="weather-humidity">💧 --%</span>
-          <span id="weather-wind">💨 -- km/h</span>
-          <span id="weather-feels">🌡️ Feels --°C</span>
-        </div>
+        <div style="margin-top:8px; text-align:center; font-size:10px; opacity:0.3;" id="w-updated">--</div>
       </div>
     </div>
 
-  </div><!-- end grid -->
+  </div><!-- /grid -->
 
-  <!-- Footer -->
-  <div class="footer">
-    Mac mini M4 · macOS 15.7 · Powered by <span>OpenClaw</span> · MAGI
+  <div style="text-align:center; padding:16px; font-size:10px; opacity:0.2;">
+    JEFFREY OS v6.0 // Built by Jeffrey for Julio // Mac mini M4 // <span id="footer-time"></span>
   </div>
 </div>
 
 <script>
-// ============ MATRIX RAIN ============
+// ====== MATRIX RAIN ======
 (function() {
-  const canvas = document.getElementById('matrix-canvas');
-  const ctx = canvas.getContext('2d');
-  let w, h, cols, drops;
-  const chars = 'アイウエオカキクケコサシスセソタチツテトJEFFREY01';
-
-  function resize() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-    cols = Math.floor(w / 16);
+  const c = document.getElementById('matrix-canvas');
+  const ctx = c.getContext('2d');
+  let cols, drops;
+  function init() {
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+    cols = Math.floor(c.width / 16);
     drops = Array(cols).fill(1);
   }
-  resize();
-  window.addEventListener('resize', resize);
-
+  init();
+  window.addEventListener('resize', init);
+  const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789JEFFREY';
   function draw() {
-    ctx.fillStyle = 'rgba(10, 10, 15, 0.08)';
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(10,10,15,0.08)';
+    ctx.fillRect(0, 0, c.width, c.height);
     ctx.fillStyle = '#00ff41';
     ctx.font = '14px monospace';
     for (let i = 0; i < cols; i++) {
-      const char = chars[Math.floor(Math.random() * chars.length)];
-      ctx.fillText(char, i * 16, drops[i] * 16);
-      if (drops[i] * 16 > h && Math.random() > 0.975) drops[i] = 0;
+      const ch = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(ch, i * 16, drops[i] * 16);
+      if (drops[i] * 16 > c.height && Math.random() > 0.975) drops[i] = 0;
       drops[i]++;
     }
-    requestAnimationFrame(draw);
   }
-  draw();
+  setInterval(draw, 50);
 })();
 
-// ============ BOOT SEQUENCE ============
+// ====== GLOBALS ======
+let STATE = null;
+let lastFetchTime = 0;
+
+// ====== BOOT SEQUENCE ======
 (function() {
   const bootLines = [
-    'JEFFREY OS v5.0 — INITIALIZING...',
+    '> JEFFREY OS v6.0 INITIALIZING...',
+    '> KERNEL: Darwin arm64 M4',
+    '> LOADING AI BUTLER MODULES...',
+    '> AIRBNB COMMAND CENTER............ OK',
+    '> OSS PIPELINE..................... OK',
+    '> LINKEDIN ENGINE.................. OK',
+    '> BRIGHTSPACE ACADEMIC............. OK',
+    '> CRON SCHEDULER (17 jobs)........ OK',
+    '> MODEL STRATEGY................... SONNET/OPUS',
+    '> STATE.JSON FEED.................. CONNECTED',
+    '> WEATHER API...................... CONNECTED',
     '',
-    '[BIOS] Apple M4 Silicon detected',
-    '[BIOS] 24GB Unified Memory — OK',
-    '[BIOS] 512GB NVMe SSD — OK',
-    '[KERN] Loading darwin kernel 24.6.0...',
-    '[KERN] macOS 15.7 Sequoia — READY',
-    '[NET ] Ethernet link up — 192.168.1.82',
-    '[NET ] DNS resolver → 1.1.1.1 (Cloudflare)',
-    '[AUTH] OpenClaw Pro license — VALID',
-    '[CORE] Loading SOUL.md... identity confirmed',
-    '[CORE] Loading MEMORY.md... continuity restored',
-    '[CORE] Loading USER.md... Julio C recognized',
-    '[AGNT] claude-opus-4.6 session — ACTIVE',
-    '[GATE] WhatsApp gateway — CONNECTED',
-    '[GATE] iMessage bridge — CONNECTED',
-    '[CRON] 4 scheduled jobs — ALL OK',
-    '[SEC ] Firewall enabled — DM policy enforced',
-    '[DASH] Command center rendering...',
-    '',
-    '▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 100%',
-    '',
-    'ALL SYSTEMS OPERATIONAL. Welcome back, Juls.',
+    '> ALL SYSTEMS NOMINAL',
+    '> WELCOME, JULIO.',
     ''
   ];
-
-  const bootEl = document.getElementById('boot-text');
+  const el = document.getElementById('boot-text');
   let lineIdx = 0, charIdx = 0, text = '';
-
-  function typeBoot() {
+  function type() {
     if (lineIdx >= bootLines.length) {
       setTimeout(() => {
         document.getElementById('boot-screen').classList.add('fade-out');
         document.getElementById('app').classList.add('visible');
-        setTimeout(() => {
-          document.getElementById('boot-screen').style.display = 'none';
-          revealPanels();
-        }, 800);
+        setTimeout(() => document.getElementById('boot-screen').remove(), 800);
       }, 400);
       return;
     }
     const line = bootLines[lineIdx];
-    if (charIdx >= line.length) {
-      text += '\n';
+    if (charIdx <= line.length) {
+      el.innerHTML = text + line.substring(0, charIdx) + '<span class="cursor"></span>';
+      charIdx++;
+      setTimeout(type, line.startsWith('>') ? 12 : 5);
+    } else {
+      text += line + '\n';
       lineIdx++;
       charIdx = 0;
-      bootEl.innerHTML = text + '<span class="cursor"></span>';
-      setTimeout(typeBoot, lineIdx === bootLines.length ? 200 : 40);
-    } else {
-      text += line[charIdx];
-      charIdx++;
-      bootEl.innerHTML = text + '<span class="cursor"></span>';
-      setTimeout(typeBoot, 12);
+      setTimeout(type, 60);
     }
   }
-  typeBoot();
+  type();
 })();
 
-// ============ REVEAL PANELS ============
-function revealPanels() {
-  document.querySelectorAll('.panel').forEach((p, i) => {
-    const delay = parseInt(p.dataset.delay) || i * 100;
-    setTimeout(() => p.classList.add('visible'), delay);
-  });
-}
-
-// ============ UPTIME & DATETIME ============
-const BOOT_EPOCH = Date.now() - (19 * 86400000 + 4 * 3600000 + 22 * 60000);
-function updateUptime() {
-  const diff = Date.now() - BOOT_EPOCH;
-  const d = Math.floor(diff / 86400000);
-  const h = Math.floor((diff % 86400000) / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
-  document.getElementById('uptime').textContent =
-    `UPTIME: ${d}d ${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
-  document.getElementById('net-uptime').textContent = `${d}d ${h}h ${m}m`;
-}
-function updateDatetime() {
+// ====== CLOCK ======
+function updateClock() {
   const now = new Date();
-  document.getElementById('datetime').textContent = now.toLocaleString('en-US', {
-    timeZone: 'America/Mexico_City',
-    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-  });
+  const cdmx = now.toLocaleString('en-US', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const date = now.toLocaleString('en-US', { timeZone: 'America/Mexico_City', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('main-clock').textContent = cdmx + ' CST';
+  document.getElementById('footer-time').textContent = date + ' ' + cdmx;
 }
-setInterval(updateUptime, 1000);
-setInterval(updateDatetime, 1000);
-updateUptime();
-updateDatetime();
+setInterval(updateClock, 1000);
+updateClock();
 
-// ============ DAILY LOG FILE ============
-(function() {
-  const now = new Date();
-  const y = now.getFullYear(), m = String(now.getMonth()+1).padStart(2,'0'), d = String(now.getDate()).padStart(2,'0');
-  document.getElementById('daily-log-file').textContent = `${y}-${m}-${d}.md`;
-})();
+// ====== HELPERS ======
+function fmtTime(ts) {
+  if (!ts) return '--';
+  const d = new Date(typeof ts === 'number' ? ts : ts);
+  const now = Date.now();
+  const diff = now - d.getTime();
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  return Math.floor(diff/86400000) + 'd ago';
+}
 
-// ============ TERMINAL LOGS ============
-(function() {
-  const output = document.getElementById('terminal-output');
-  const logTemplates = [
-    { msg: '[HEARTBEAT] System pulse — all services responding', cls: 'log-ok' },
-    { msg: '[WHATSAPP] Gateway heartbeat — latency {latency}ms', cls: 'log-ok' },
-    { msg: '[IMESSAGE] Bridge sync — 0 pending messages', cls: 'log-ok' },
-    { msg: '[CRON] airbnb-monitor — no new reservations', cls: 'log-warn' },
-    { msg: '[CRON] linkedin-engine — next post in {hours}h', cls: 'log-info' },
-    { msg: '[CRON] oss-contributions — scanning 3 repos', cls: 'log-info' },
-    { msg: '[CRON] brightspace-alerts — no new assignments', cls: 'log-ok' },
-    { msg: '[AGENT] claude-opus-4.6 — {tokens} tokens consumed', cls: 'log-info' },
-    { msg: '[MEMORY] Daily log updated — {entries} entries', cls: 'log-ok' },
-    { msg: '[GIT] Pull check — ai-garden: up to date', cls: 'log-ok' },
-    { msg: '[GIT] Pull check — sherlock: 2 new commits upstream', cls: 'log-info' },
-    { msg: '[NET] DNS resolution — avg {dns}ms via 1.1.1.1', cls: 'log-ok' },
-    { msg: '[SEC] Firewall — 0 blocked connections', cls: 'log-ok' },
-    { msg: '[SEC] DM filter — 0 unauthorized attempts', cls: 'log-ok' },
-    { msg: '[SYS] CPU temp: {temp}°C — within normal range', cls: 'log-ok' },
-    { msg: '[SYS] Memory pressure: nominal', cls: 'log-ok' },
-    { msg: '[WEATHER] Mexico City — {wtemp}°C, {wcond}', cls: 'log-info' },
-    { msg: '[EMAIL] Gmail — 20,568 unread (storage 90%)', cls: 'log-warn' },
-    { msg: '[AIRBNB] Casa Diamante — 0 reservations ⚠️', cls: 'log-warn' },
-    { msg: '[GITHUB] PR #25 — awaiting review', cls: 'log-info' },
-  ];
+function fmtTimeShort(ts) {
+  if (!ts) return '--';
+  const d = new Date(typeof ts === 'number' ? ts : ts);
+  return d.toLocaleTimeString('en-US', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', hour12: false });
+}
 
-  function ts() {
-    const n = new Date();
-    return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+function statusBadge(s) {
+  const cls = s === 'ok' ? 'badge-ok' : s === 'error' ? 'badge-error' : s === 'running' ? 'badge-running' : 'badge-idle';
+  return `<span class="badge ${cls}">${s.toUpperCase()}</span>`;
+}
+
+function healthBadge(ago) {
+  if (!ago) return '<span class="badge badge-stale">UNKNOWN</span>';
+  if (ago.includes('minute') || ago.includes('hour') && !ago.includes('hours') || ago.includes('just')) return '<span class="badge badge-active">ACTIVE</span>';
+  if (ago.includes('day') && (ago.includes('1 ') || ago.includes('2 ') || ago.includes('3 ') || ago.includes('4 ') || ago.includes('5 ') || ago.includes('6 ') || ago.includes('7 '))) return '<span class="badge badge-recent">RECENT</span>';
+  return '<span class="badge badge-stale">STALE</span>';
+}
+
+// ====== CRON CATEGORIES ======
+function categorizeCron(name) {
+  if (name.startsWith('airbnb')) return 'Airbnb';
+  if (name.startsWith('oss-')) return 'OSS';
+  if (name.startsWith('linkedin')) return 'LinkedIn';
+  if (name.startsWith('brightspace')) return 'Brightspace';
+  if (name.startsWith('garden')) return 'System';
+  return 'System';
+}
+
+// ====== RENDER ======
+function render() {
+  if (!STATE) return;
+  const s = STATE;
+
+  // Status bar
+  if (s.infrastructure) {
+    document.getElementById('sb-model').textContent = s.tokens ? s.tokens.model_main.replace('claude-','').toUpperCase() : 'SONNET';
+    document.getElementById('sb-host').textContent = s.infrastructure.host || '--';
+    document.getElementById('sb-ip').textContent = 'IP: ' + (s.infrastructure.ip || 'local');
+  }
+  const syncAge = Math.round((Date.now() - lastFetchTime) / 1000);
+  document.getElementById('sb-updated').textContent = 'LAST SYNC: ' + syncAge + 's ago';
+  document.getElementById('sb-uptime').textContent = 'UPTIME: ' + fmtTime(s.timestamp);
+
+  // System metrics
+  if (s.system) {
+    const load = s.system.loadAvg && s.system.loadAvg.length ? s.system.loadAvg[0] : 0;
+    const cpuPct = Math.min(100, Math.round(load * 10));
+    const ramPct = Math.round((s.system.memUsedGB / s.system.memTotalGB) * 100);
+    const diskPct = parseInt(s.system.diskPercent) || 0;
+    document.getElementById('cpu-bar').style.width = cpuPct + '%';
+    document.getElementById('cpu-val').textContent = load ? load.toFixed(1) + ' load' : '0.0 load';
+    document.getElementById('ram-bar').style.width = ramPct + '%';
+    document.getElementById('ram-val').textContent = s.system.memUsedGB + '/' + s.system.memTotalGB + 'GB';
+    document.getElementById('disk-bar').style.width = diskPct + '%';
+    document.getElementById('disk-val').textContent = s.system.diskUsed + '/' + s.system.diskTotal;
+    if (diskPct > 80) document.getElementById('disk-bar').className = 'bar-fill red-bar';
+    document.getElementById('sys-host').textContent = s.hostname || '--';
+    document.getElementById('sys-os').textContent = s.infrastructure ? 'macOS ' + s.infrastructure.os : '--';
+    document.getElementById('sys-arch').textContent = s.infrastructure ? s.infrastructure.arch : '--';
   }
 
-  function addLog() {
-    const t = logTemplates[Math.floor(Math.random() * logTemplates.length)];
-    let msg = t.msg
-      .replace('{latency}', 38 + Math.floor(Math.random() * 20))
-      .replace('{hours}', 1 + Math.floor(Math.random() * 5))
-      .replace('{tokens}', (1800000 + Math.floor(Math.random() * 400000)).toLocaleString())
-      .replace('{entries}', 12 + Math.floor(Math.random() * 20))
-      .replace('{dns}', 8 + Math.floor(Math.random() * 12))
-      .replace('{temp}', 42 + Math.floor(Math.random() * 8))
-      .replace('{wtemp}', 18 + Math.floor(Math.random() * 6))
-      .replace('{wcond}', ['Partly cloudy', 'Clear', 'Overcast', 'Sunny'][Math.floor(Math.random()*4)]);
+  // Airbnb
+  if (s.airbnb) {
+    const a = s.airbnb;
+    document.getElementById('ab-listing').textContent = a.listing || '--';
+    document.getElementById('ab-location').textContent = a.location || '--';
+    document.getElementById('ab-minstay').textContent = a.minStay + ' nights';
+    document.getElementById('ab-bookings').textContent = a.bookings + ' reservas activas';
+    document.getElementById('ab-lastcheck').textContent = fmtTime(a.lastChecked);
+    document.getElementById('ab-price-ss1').textContent = '$' + (a.priceSemanaFuerte || '--').toLocaleString();
+    document.getElementById('ab-price-ss2').textContent = '$' + (a.priceSemanaSegunda || '--').toLocaleString();
+    document.getElementById('ab-price-reg').textContent = '$' + (a.priceRegular || '--').toLocaleString();
 
-    const line = document.createElement('div');
-    line.className = 'log-line';
-    line.innerHTML = `<span class="log-time">${ts()}</span> <span class="${t.cls}">${msg}</span>`;
-    output.appendChild(line);
-    if (output.children.length > 100) output.removeChild(output.firstChild);
-    output.scrollTop = output.scrollHeight;
+    if (a.bookings === 0) {
+      document.getElementById('ab-warning').innerHTML = '<div class="warning-box">⚠ 0 RESERVAS ACTIVAS — Semana Santa approaching with no bookings!</div>';
+    } else {
+      document.getElementById('ab-warning').innerHTML = '';
+    }
+
+    // Countdown
+    const ssStart = new Date(a.semanaSantaStart + 'T00:00:00-06:00');
+    const now = new Date();
+    const diffMs = ssStart - now;
+    if (diffMs > 0) {
+      const days = Math.floor(diffMs / 86400000);
+      const hrs = Math.floor((diffMs % 86400000) / 3600000);
+      document.getElementById('ss-days').textContent = days + 'd ' + hrs + 'h';
+    } else {
+      document.getElementById('ss-days').textContent = '🎉 EN CURSO';
+      document.getElementById('ss-days').style.color = 'var(--green)';
+    }
   }
 
-  // Initial burst
-  setTimeout(() => {
-    for (let i = 0; i < 8; i++) setTimeout(addLog, i * 200);
-    setInterval(addLog, 3000 + Math.random() * 2000);
-  }, 3500);
-})();
-
-// ============ SYSTEM METRICS (simulated fluctuation) ============
-(function() {
-  let cpu = 12, mem = 68, disk = 54, swap = 8;
-
-  function fluctuate(val, min, max, range) {
-    val += (Math.random() - 0.5) * range;
-    return Math.max(min, Math.min(max, val));
+  // OSS Pipeline
+  if (s.crons) {
+    const ossCrons = ['oss-scout-morning', 'oss-execute-afternoon', 'oss-evening-report'];
+    const ossLabels = { 'oss-scout-morning': '🔍 Scout (9am)', 'oss-execute-afternoon': '⚡ Execute (2pm)', 'oss-evening-report': '📊 Report (8pm)' };
+    let html = '';
+    ossCrons.forEach(name => {
+      const cron = s.crons.find(c => c.name === name);
+      if (cron) {
+        html += `<div class="cron-row">
+          ${statusBadge(cron.status)}
+          <span class="cron-name">${ossLabels[name]}</span>
+          <span class="cron-time">${cron.lastRun ? fmtTimeShort(cron.lastRun) : '--'}</span>
+        </div>`;
+      }
+    });
+    document.getElementById('oss-pipeline').innerHTML = html;
   }
 
-  function updateGauge(barId, valId, val) {
-    const bar = document.getElementById(barId);
-    const label = document.getElementById(valId);
-    bar.style.width = val + '%';
-    label.textContent = Math.round(val) + '%';
-    bar.className = 'gauge-fill' + (val > 85 ? ' danger' : val > 70 ? ' warn' : '');
+  // Crons
+  if (s.crons) {
+    document.getElementById('cron-count').textContent = s.crons.length + ' JOBS';
+    const groups = {};
+    s.crons.forEach(c => {
+      const cat = categorizeCron(c.name);
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(c);
+    });
+    const order = ['Airbnb', 'OSS', 'LinkedIn', 'Brightspace', 'System'];
+    let html = '';
+    order.forEach(cat => {
+      if (!groups[cat]) return;
+      html += `<div class="cron-group-title">${cat}</div>`;
+      groups[cat].forEach(c => {
+        html += `<div class="cron-row">
+          ${statusBadge(c.status)}
+          <span class="cron-name">${c.name}</span>
+          <span class="cron-time" title="Next: ${c.nextRun ? new Date(c.nextRun).toLocaleString() : '--'}">${c.lastRun ? fmtTime(c.lastRun) : '--'} → ${c.nextRun ? fmtTimeShort(c.nextRun) : '--'}</span>
+        </div>`;
+      });
+    });
+    document.getElementById('crons-body').innerHTML = html;
   }
 
-  setInterval(() => {
-    cpu = fluctuate(cpu, 5, 45, 8);
-    mem = fluctuate(mem, 55, 82, 4);
-    disk = fluctuate(disk, 53, 56, 0.5);
-    swap = fluctuate(swap, 3, 18, 3);
-    updateGauge('cpu-bar', 'cpu-val', cpu);
-    updateGauge('mem-bar', 'mem-val', mem);
-    updateGauge('disk-bar', 'disk-val', disk);
-    updateGauge('swap-bar', 'swap-val', swap);
-  }, 2000);
-})();
+  // LinkedIn
+  if (s.linkedin) {
+    const li = s.linkedin;
+    document.getElementById('li-profile').textContent = li.profile || '--';
+    document.getElementById('li-posts').textContent = li.postCron || '--';
+    document.getElementById('li-growth').textContent = li.growthCron || '--';
+    document.getElementById('li-lang').textContent = li.language || '--';
+    document.getElementById('li-lastrun').textContent = li.lastNetworkRun ? fmtTime(li.lastNetworkRun) : 'Not yet';
+  }
 
-// ============ PROJECTS STATUS ============
-(function() {
-  const projects = [
-    { name: 'ai-garden', desc: 'AI Civilization v6', branch: 'main', commit: 'feat: add multi-agent negotiation layer', ago: '2h ago', health: 'active' },
-    { name: 'airbnb-manager', desc: 'Casa Diamante', branch: 'main', commit: 'update: Semana Santa pricing table', ago: '5h ago', health: 'active' },
-    { name: 'Anthropic-Cybersecurity-Skills', desc: 'Open Source', branch: 'main', commit: 'add: cloud security skill descriptions', ago: '1d ago', health: 'active' },
-    { name: 'cytadel', desc: 'Cybersecurity startup', branch: 'develop', commit: 'refactor: threat intel pipeline', ago: '3d ago', health: 'recent' },
-    { name: 'jeffrey-os-dashboard', desc: 'This dashboard', branch: 'main', commit: '🖥️ Complete dashboard rebuild', ago: 'just now', health: 'active' },
-    { name: 'sherlock', desc: 'OSINT tool contributions', branch: 'master', commit: 'fix: TikTok false positive detection', ago: '1d ago', health: 'active' },
-    { name: 'maigret', desc: 'OSINT tool contributions', branch: 'main', commit: 'docs: update usage examples', ago: '6d ago', health: 'recent' },
-    { name: 'linkedin-engine', desc: 'Content automation', branch: 'main', commit: 'feat: auto-schedule cybersecurity posts', ago: '8h ago', health: 'active' },
-  ];
-
-  const container = document.getElementById('projects-list');
-  projects.forEach(p => {
-    container.innerHTML += `
-      <div class="project-item">
-        <div class="health-dot ${p.health}"></div>
-        <div class="project-info">
-          <div class="project-name">${p.name} <span style="color:#555;font-weight:normal;font-size:10px">— ${p.desc}</span></div>
-          <div class="project-meta">${p.branch} · ${p.ago}</div>
-          <div class="project-commit">${p.commit}</div>
-        </div>
+  // Projects
+  if (s.projects) {
+    const names = Object.keys(s.projects).sort();
+    document.getElementById('proj-count').textContent = names.length + ' REPOS';
+    let html = '';
+    names.forEach(name => {
+      const p = s.projects[name];
+      html += `<div class="proj-row">
+        ${healthBadge(p.lastCommitAgo)}
+        <span class="proj-name">${name}</span>
+        ${p.dirty > 0 ? '<span class="proj-dirty">' + p.dirty + ' dirty</span>' : ''}
+        <span class="proj-msg">${p.lastCommitMsg || '--'}</span>
+        <span class="proj-time">${p.lastCommitAgo || '--'}</span>
       </div>`;
-  });
-})();
+    });
+    document.getElementById('proj-list').innerHTML = html;
+  }
 
-// ============ NETWORK SIMULATION ============
-(function() {
-  setInterval(() => {
-    document.getElementById('latency-val').textContent = (38 + Math.floor(Math.random() * 15)) + 'ms';
-    document.getElementById('bw-in').textContent = (8 + Math.random() * 10).toFixed(1) + ' MB/s';
-    document.getElementById('bw-out').textContent = (1 + Math.random() * 5).toFixed(1) + ' MB/s';
-  }, 3000);
-})();
+  // AI Garden
+  if (s.garden) {
+    const g = s.garden;
+    document.getElementById('g-citizens').textContent = g.citizens;
+    document.getElementById('g-plants').textContent = g.plants;
+    document.getElementById('g-events').textContent = g.events;
+    document.getElementById('g-factions').textContent = g.factions;
+    document.getElementById('g-version').textContent = 'v' + g.version;
+    document.getElementById('g-updated').textContent = fmtTime(g.lastUpdated);
+  }
 
-// ============ TOKEN GAUGE SIMULATION ============
-(function() {
-  let tokens = 45;
-  setInterval(() => {
-    tokens += (Math.random() - 0.3) * 0.5;
-    tokens = Math.max(40, Math.min(55, tokens));
-    document.getElementById('token-bar').style.width = tokens + '%';
-    document.getElementById('token-val').textContent = Math.round(tokens) + '%';
-  }, 5000);
-})();
+  // Brightspace
+  if (s.crons) {
+    const bsCrons = ['brightspace-wednesday-audit', 'brightspace-thursday-execute', 'brightspace-saturday-submit'];
+    const bsLabels = { 'brightspace-wednesday-audit': '📋 Wednesday Audit', 'brightspace-thursday-execute': '⚡ Thursday Execute', 'brightspace-saturday-submit': '📤 Saturday Submit' };
+    let html = '';
+    bsCrons.forEach(name => {
+      const cron = s.crons.find(c => c.name === name);
+      if (cron) {
+        html += `<div class="cron-row">
+          ${statusBadge(cron.status)}
+          <span class="cron-name">${bsLabels[name]}</span>
+          <span class="cron-time">Next: ${cron.nextRun ? fmtTimeShort(cron.nextRun) : '--'}</span>
+        </div>`;
+      }
+    });
+    document.getElementById('bs-pipeline').innerHTML = html;
+  }
 
-// ============ FETCH PUBLIC IP ============
-fetch('https://api.ipify.org?format=json')
-  .then(r => r.json())
-  .then(d => { document.getElementById('public-ip').textContent = d.ip; })
-  .catch(() => { document.getElementById('public-ip').textContent = '—'; });
+  // Model Strategy
+  if (s.tokens) {
+    document.getElementById('m-plan').textContent = s.tokens.plan || '--';
+  }
 
-// ============ FETCH WEATHER ============
-fetch('https://wttr.in/Mexico+City?format=j1')
-  .then(r => r.json())
-  .then(d => {
-    const cur = d.current_condition[0];
-    document.getElementById('weather-temp').textContent = cur.temp_C + '°C';
-    document.getElementById('weather-cond').textContent = cur.weatherDesc[0].value;
-    document.getElementById('weather-humidity').textContent = '💧 ' + cur.humidity + '%';
-    document.getElementById('weather-wind').textContent = '💨 ' + cur.windspeedKmph + ' km/h';
-    document.getElementById('weather-feels').textContent = '🌡️ Feels ' + cur.FeelsLikeC + '°C';
-    document.getElementById('weather-time').textContent = 'LIVE';
-  })
-  .catch(() => {
-    document.getElementById('weather-temp').textContent = '22°C';
-    document.getElementById('weather-cond').textContent = 'Partly cloudy';
-    document.getElementById('weather-humidity').textContent = '💧 48%';
-    document.getElementById('weather-wind').textContent = '💨 12 km/h';
-    document.getElementById('weather-feels').textContent = '🌡️ Feels 21°C';
-    document.getElementById('weather-time').textContent = 'CACHED';
-  });
+  // Infrastructure
+  if (s.infrastructure) {
+    document.getElementById('i-host').textContent = s.infrastructure.host || '--';
+    document.getElementById('i-os').textContent = 'macOS ' + (s.infrastructure.os || '--');
+    document.getElementById('i-arch').textContent = s.infrastructure.arch || '--';
+  }
+
+  // Activity Log — build from cron last runs
+  if (s.crons) {
+    const events = s.crons
+      .filter(c => c.lastRun)
+      .map(c => ({ name: c.name, time: c.lastRun, status: c.status }))
+      .sort((a, b) => b.time - a.time)
+      .slice(0, 10);
+    let html = '';
+    events.forEach(e => {
+      const icon = e.status === 'ok' ? '✓' : e.status === 'error' ? '✗' : '○';
+      const cls = e.status === 'ok' ? 'green' : e.status === 'error' ? 'red' : 'dim';
+      html += `<div class="log-entry"><span class="log-time">${fmtTimeShort(e.time)}</span> <span class="${cls}">${icon}</span> ${e.name}</div>`;
+    });
+    document.getElementById('activity-log').innerHTML = html || '<div class="dim">No recent activity</div>';
+  }
+}
+
+// ====== FETCH STATE ======
+async function fetchState() {
+  try {
+    const res = await fetch('/state.json?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    STATE = await res.json();
+    lastFetchTime = Date.now();
+    render();
+  } catch (e) {
+    console.error('State fetch failed:', e);
+    if (STATE) {
+      // Show warning but keep last data
+      document.getElementById('sb-updated').textContent = 'SYNC FAILED';
+      document.getElementById('sb-updated').style.color = 'var(--red)';
+    }
+  }
+}
+
+// ====== FETCH WEATHER ======
+async function fetchWeather() {
+  try {
+    const [acaRes, cdmxRes] = await Promise.all([
+      fetch('https://wttr.in/Acapulco?format=j1'),
+      fetch('https://wttr.in/Mexico+City?format=j1')
+    ]);
+    if (acaRes.ok) {
+      const aca = await acaRes.json();
+      const cur = aca.current_condition[0];
+      document.getElementById('w-acapulco-temp').textContent = cur.temp_C + '°C';
+      document.getElementById('w-acapulco-desc').textContent = cur.weatherDesc[0].value + ' · ' + cur.humidity + '% hum';
+    }
+    if (cdmxRes.ok) {
+      const cdmx = await cdmxRes.json();
+      const cur = cdmx.current_condition[0];
+      document.getElementById('w-cdmx-temp').textContent = cur.temp_C + '°C';
+      document.getElementById('w-cdmx-desc').textContent = cur.weatherDesc[0].value + ' · ' + cur.humidity + '% hum';
+    }
+    document.getElementById('w-updated').textContent = 'Updated: ' + new Date().toLocaleTimeString('en-US', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch (e) {
+    console.error('Weather fetch failed:', e);
+    document.getElementById('w-acapulco-desc').textContent = 'Unavailable';
+    document.getElementById('w-cdmx-desc').textContent = 'Unavailable';
+  }
+}
+
+// ====== UPDATE SYNC TIMER ======
+setInterval(() => {
+  if (lastFetchTime) {
+    const age = Math.round((Date.now() - lastFetchTime) / 1000);
+    const el = document.getElementById('sb-updated');
+    el.textContent = 'LAST SYNC: ' + age + 's ago';
+    el.style.color = age > 90 ? 'var(--yellow)' : '';
+  }
+}, 5000);
+
+// ====== INIT ======
+fetchState();
+setInterval(fetchState, 60000);
+fetchWeather();
+setInterval(fetchWeather, 600000); // refresh weather every 10 min
+
+// Init Lucide icons after DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.lucide) lucide.createIcons();
+});
+// Also try after a short delay in case script loads late
+setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 500);
 </script>
 </body>
 </html>

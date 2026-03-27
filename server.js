@@ -50,7 +50,7 @@ const server = http.createServer((req, res) => {
 
   // Route mapping
   if (urlPath === '/api/state' || urlPath === '/state.json') urlPath = '/state.json';
-  else if (urlPath === '/' || urlPath === '/index.html') urlPath = '/dashboard.html';
+  else if (urlPath === '/' || urlPath === '/dashboard.html') urlPath = '/index.html';
 
   // Prevent path traversal
   const filePath = path.join(DIR, path.normalize(urlPath));
@@ -78,6 +78,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Jeffrey OS Dashboard v5 running on http://0.0.0.0:${PORT}`);
+  console.log(`Jeffrey OS Dashboard v6.0 running on http://0.0.0.0:${PORT}`);
   console.log(`State refresh: 15s | Health: http://0.0.0.0:${PORT}/api/health`);
 });
