@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JEFFREY OS v6.0 // COMMAND CENTER</title>
+<title>JEFFREY OS v6.1 // COMMAND CENTER</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
@@ -89,6 +89,21 @@ body {
 }
 .status-tag.warn { border-color: var(--yellow); color: var(--yellow); }
 .status-tag.error { border-color: var(--red); color: var(--red); }
+
+.live-indicator {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--red); font-weight: 700; font-size: 11px;
+  font-family: 'Orbitron', sans-serif; letter-spacing: 1px;
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--red);
+  animation: livePulse 1.2s infinite;
+}
+@keyframes livePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--red); }
+  50% { opacity: 0.3; box-shadow: none; }
+}
 
 /* Header */
 .header {
@@ -197,11 +212,38 @@ body {
 .bar-val { font-size: 11px; min-width: 48px; text-align: right; }
 
 /* Cron table */
-.cron-group-title { font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--cyan); margin: 10px 0 6px; border-bottom: 1px solid rgba(0,212,255,0.15); padding-bottom: 3px; }
+.cron-group-title {
+  font-family: 'Orbitron', sans-serif; font-size: 10px; letter-spacing: 2px;
+  color: var(--cyan); margin: 12px 0 6px;
+  border-bottom: 1px solid rgba(0,212,255,0.15); padding-bottom: 3px;
+}
 .cron-group-title:first-child { margin-top: 0; }
-.cron-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
+.cron-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0; font-size: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+}
 .cron-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cron-time { font-size: 10px; opacity: 0.5; min-width: 70px; text-align: right; }
+.cron-time { font-size: 10px; opacity: 0.5; min-width: 90px; text-align: right; }
+.cron-actions { display: flex; gap: 4px; }
+
+/* Action buttons */
+.btn-action {
+  background: rgba(0,255,65,0.08); border: 1px solid rgba(0,255,65,0.25);
+  color: var(--green); font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; padding: 2px 8px; border-radius: 3px;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-action:hover {
+  background: rgba(0,255,65,0.2); border-color: var(--green);
+  box-shadow: 0 0 8px rgba(0,255,65,0.3);
+}
+.btn-action.btn-run { color: var(--cyan); border-color: rgba(0,212,255,0.3); background: rgba(0,212,255,0.08); }
+.btn-action.btn-run:hover { background: rgba(0,212,255,0.2); border-color: var(--cyan); }
+.btn-action.btn-disable { color: var(--yellow); border-color: rgba(255,204,0,0.3); background: rgba(255,204,0,0.08); }
+.btn-action.btn-disable:hover { background: rgba(255,204,0,0.2); }
+.btn-action.btn-enable { color: var(--green); border-color: rgba(0,255,65,0.3); background: rgba(0,255,65,0.08); }
+.btn-action:disabled { opacity: 0.3; cursor: not-allowed; }
 
 /* Projects list */
 .proj-list { max-height: 360px; overflow-y: auto; }
@@ -249,6 +291,23 @@ body {
 }
 .countdown .label { font-size: 10px; opacity: 0.5; letter-spacing: 2px; margin-bottom: 4px; }
 
+/* Alert box */
+.alert-box {
+  background: rgba(255,51,51,0.12); border: 1px solid rgba(255,51,51,0.4);
+  border-radius: 4px; padding: 10px 14px; color: var(--red); font-size: 12px;
+  margin: 8px 0; animation: alertPulse 2s infinite;
+}
+@keyframes alertPulse {
+  0%,100% { border-color: rgba(255,51,51,0.4); }
+  50% { border-color: rgba(255,51,51,0.8); box-shadow: 0 0 12px rgba(255,51,51,0.2); }
+}
+
+/* OSS PR row */
+.oss-pr { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.oss-pr a { color: var(--cyan); text-decoration: none; }
+.oss-pr a:hover { text-decoration: underline; }
+.oss-pr-repo { font-size: 10px; opacity: 0.4; }
+
 /* Responsive */
 @media (max-width: 1200px) {
   .col-3 { grid-column: span 4; }
@@ -289,6 +348,11 @@ body {
 .warning-box { background: rgba(255,204,0,0.08); border: 1px solid rgba(255,204,0,0.3); border-radius: 4px; padding: 8px 12px; color: var(--yellow); font-size: 12px; margin: 8px 0; }
 .plant-anim { font-size: 24px; animation: sway 2s ease-in-out infinite; display: inline-block; }
 @keyframes sway { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+
+.crons-scroll { max-height: 500px; overflow-y: auto; }
+.crons-scroll::-webkit-scrollbar { width: 4px; }
+.crons-scroll::-webkit-scrollbar-track { background: transparent; }
+.crons-scroll::-webkit-scrollbar-thumb { background: rgba(0,255,65,0.2); border-radius: 2px; }
 </style>
 </head>
 <body>
@@ -306,6 +370,7 @@ body {
   <!-- Status Bar -->
   <div class="status-bar">
     <div class="left">
+      <span class="live-indicator"><span class="live-dot"></span> LIVE</span>
       <span class="status-tag" id="sb-model">SONNET 4.6</span>
       <span class="dim">|</span>
       <span id="sb-uptime">UPTIME: --</span>
@@ -315,13 +380,15 @@ body {
     <div class="right">
       <span id="sb-updated">LAST SYNC: --</span>
       <span class="dim">|</span>
+      <span id="sb-cron-refresh">CRONS: --</span>
+      <span class="dim">|</span>
       <span id="sb-ip">IP: --</span>
     </div>
   </div>
 
   <!-- Header -->
   <div class="header">
-    <h1>JEFFREY OS v6.0</h1>
+    <h1>JEFFREY OS v6.1</h1>
     <div class="subtitle">AI BUTLER COMMAND CENTER // BUENOS DIAS, JULIO</div>
     <div class="clock" id="main-clock">--:--:--</div>
   </div>
@@ -348,25 +415,21 @@ body {
     <div class="panel col-4" id="p-airbnb">
       <div class="panel-header"><span class="icon"><i data-lucide="home"></i></span> AIRBNB COMMAND CENTER</div>
       <div class="panel-body" id="airbnb-body">
-        <div class="kv"><span class="k">Listing</span><span id="ab-listing" class="cyan">--</span></div>
-        <div class="kv"><span class="k">Location</span><span id="ab-location">--</span></div>
-        <div class="kv"><span class="k">Min Stay</span><span id="ab-minstay">--</span></div>
-        <div class="kv"><span class="k">Bookings</span><span id="ab-bookings" class="yellow">--</span></div>
-        <div class="kv"><span class="k">Last Check</span><span id="ab-lastcheck" class="dim">--</span></div>
-
-        <div class="section-title">PRICE CALENDAR</div>
+        <div id="ab-alert"></div>
         <div class="price-grid">
-          <div class="price-card"><div class="price green" id="ab-price-ss1">--</div><div class="label">SEMANA SANTA<br>Mar 29 - Apr 5</div></div>
-          <div class="price-card"><div class="price cyan" id="ab-price-ss2">--</div><div class="label">WEEK 2<br>Apr 6 - Apr 12</div></div>
-          <div class="price-card"><div class="price" id="ab-price-reg">--</div><div class="label">REGULAR<br>Per Night</div></div>
+          <div class="price-card"><div class="price green" id="ab-price-ss1">$3,200</div><div class="label">SEMANA SANTA<br>Mar 29 - Apr 5</div></div>
+          <div class="price-card"><div class="price cyan" id="ab-price-ss2">$3,500</div><div class="label">WEEK 2<br>Apr 6 - Apr 12</div></div>
+          <div class="price-card"><div class="price" id="ab-price-reg">$2,500</div><div class="label">REGULAR<br>Per Night</div></div>
         </div>
-
+        <div class="kv"><span class="k">Bookings</span><span id="ab-bookings" class="yellow">0 reservas</span></div>
+        <div class="kv"><span class="k">Currency</span><span>MXN</span></div>
         <div id="ab-warning"></div>
-
         <div class="countdown" id="ss-countdown">
           <div class="label">SEMANA SANTA COUNTDOWN</div>
           <div id="ss-days">--</div>
         </div>
+        <div class="section-title">CRONS</div>
+        <div id="ab-crons"></div>
       </div>
     </div>
 
@@ -374,35 +437,45 @@ body {
     <div class="panel col-4" id="p-oss">
       <div class="panel-header"><span class="icon"><i data-lucide="git-pull-request"></i></span> GITHUB OSS PIPELINE</div>
       <div class="panel-body" id="oss-body">
-        <div class="section-title">DAILY PIPELINE</div>
+        <div class="section-title">ACTIVE PRS</div>
+        <div id="oss-prs"></div>
+        <div class="section-title" style="margin-top:12px;">DAILY PIPELINE</div>
         <div id="oss-pipeline"></div>
-        <div style="margin-top:12px;">
-          <div class="kv"><span class="k">Strategy</span><span>Scout → Execute → Report</span></div>
-          <div class="kv"><span class="k">Target</span><span class="cyan">High-impact OSS PRs</span></div>
+        <div style="margin-top:10px; display:flex; gap:6px;">
+          <button class="btn-action btn-run" onclick="runCron('oss-scout-morning')">Run Scout Now</button>
+          <button class="btn-action btn-run" onclick="runCron('oss-execute-afternoon')">Run Execute Now</button>
         </div>
       </div>
     </div>
 
     <!-- 4. CRON JOBS -->
     <div class="panel col-8" id="p-crons">
-      <div class="panel-header"><span class="icon"><i data-lucide="clock"></i></span> CRON JOBS <span class="dim" style="margin-left:auto;font-family:'Share Tech Mono';font-size:10px;" id="cron-count">--</span></div>
-      <div class="panel-body" id="crons-body"></div>
+      <div class="panel-header">
+        <span class="icon"><i data-lucide="clock"></i></span> CRON JOBS
+        <span class="dim" style="margin-left:auto;font-family:'Share Tech Mono';font-size:10px;" id="cron-count">--</span>
+      </div>
+      <div class="panel-body">
+        <div class="crons-scroll" id="crons-body"></div>
+      </div>
     </div>
 
     <!-- 5. LINKEDIN ENGINE -->
     <div class="panel col-4" id="p-linkedin">
       <div class="panel-header"><span class="icon"><i data-lucide="linkedin"></i></span> LINKEDIN ENGINE</div>
       <div class="panel-body" id="linkedin-body">
-        <div class="kv"><span class="k">Profile</span><span class="cyan" id="li-profile">--</span></div>
-        <div class="kv"><span class="k">Post Schedule</span><span id="li-posts">--</span></div>
-        <div class="kv"><span class="k">Network Growth</span><span id="li-growth">--</span></div>
-        <div class="kv"><span class="k">Language</span><span id="li-lang">--</span></div>
-        <div class="kv"><span class="k">Last Network Run</span><span id="li-lastrun" class="dim">--</span></div>
+        <div class="kv"><span class="k">Post Schedule</span><span>3x daily (10am/4pm/10pm)</span></div>
+        <div class="kv"><span class="k">Network Growth</span><span>Monday 11am</span></div>
+        <div class="kv"><span class="k">Language</span><span>English</span></div>
+        <div class="section-title" style="margin-top:10px;">CRONS</div>
+        <div id="li-crons"></div>
+        <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn-action btn-run" onclick="runCron('linkedin-github-posts')">Run Posts Now</button>
+          <button class="btn-action btn-run" onclick="runCron('linkedin-network-growth')">Run Network Growth</button>
+        </div>
         <div style="margin-top:10px;">
           <div class="section-title">CONTENT STRATEGY</div>
           <div style="font-size:11px; opacity:0.6; line-height:1.5;">
             Posts auto-generated from GitHub activity.<br>
-            3x daily: 10am / 4pm / 10pm<br>
             Network expansion: Monday 11am
           </div>
         </div>
@@ -479,6 +552,7 @@ body {
         <div class="kv"><span class="k">Gateway</span><span class="green">ACTIVE</span></div>
         <div class="kv"><span class="k">WhatsApp</span><span class="green">CONNECTED</span></div>
         <div class="kv"><span class="k">State Refresh</span><span>Every 15s</span></div>
+        <div class="kv"><span class="k">Cron Refresh</span><span>Every 30s</span></div>
       </div>
     </div>
 
@@ -513,7 +587,7 @@ body {
   </div><!-- /grid -->
 
   <div style="text-align:center; padding:16px; font-size:10px; opacity:0.2;">
-    JEFFREY OS v6.0 // Built by Jeffrey for Julio // Mac mini M4 // <span id="footer-time"></span>
+    JEFFREY OS v6.1 // Built by Jeffrey for Julio // Mac mini M4 // <span id="footer-time"></span>
   </div>
 </div>
 
@@ -549,12 +623,14 @@ body {
 
 // ====== GLOBALS ======
 let STATE = null;
+let CRONS = null;
 let lastFetchTime = 0;
+let lastCronFetchTime = 0;
 
 // ====== BOOT SEQUENCE ======
 (function() {
   const bootLines = [
-    '> JEFFREY OS v6.0 INITIALIZING...',
+    '> JEFFREY OS v6.1 INITIALIZING...',
     '> KERNEL: Darwin arm64 M4',
     '> LOADING AI BUTLER MODULES...',
     '> AIRBNB COMMAND CENTER............ OK',
@@ -562,6 +638,7 @@ let lastFetchTime = 0;
     '> LINKEDIN ENGINE.................. OK',
     '> BRIGHTSPACE ACADEMIC............. OK',
     '> CRON SCHEDULER (17 jobs)........ OK',
+    '> LIVE API ENDPOINTS............... CONNECTED',
     '> MODEL STRATEGY................... SONNET/OPUS',
     '> STATE.JSON FEED.................. CONNECTED',
     '> WEATHER API...................... CONNECTED',
@@ -619,6 +696,24 @@ function fmtTime(ts) {
   return Math.floor(diff/86400000) + 'd ago';
 }
 
+function fmtTimeUntil(ts) {
+  if (!ts) return '--';
+  const d = new Date(typeof ts === 'number' ? ts : ts);
+  const now = Date.now();
+  const diff = d.getTime() - now;
+  if (diff <= 0) return 'now';
+  if (diff < 60000) return 'in <1m';
+  if (diff < 3600000) return 'in ' + Math.floor(diff/60000) + 'm';
+  if (diff < 86400000) {
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff % 3600000)/60000);
+    return 'in ' + h + 'h ' + m + 'm';
+  }
+  const days = Math.floor(diff/86400000);
+  const h = Math.floor((diff % 86400000)/3600000);
+  return 'in ' + days + 'd ' + h + 'h';
+}
+
 function fmtTimeShort(ts) {
   if (!ts) return '--';
   const d = new Date(typeof ts === 'number' ? ts : ts);
@@ -626,8 +721,9 @@ function fmtTimeShort(ts) {
 }
 
 function statusBadge(s) {
+  if (!s) s = 'idle';
   const cls = s === 'ok' ? 'badge-ok' : s === 'error' ? 'badge-error' : s === 'running' ? 'badge-running' : 'badge-idle';
-  return `<span class="badge ${cls}">${s.toUpperCase()}</span>`;
+  return '<span class="badge ' + cls + '">' + (s || 'IDLE').toUpperCase() + '</span>';
 }
 
 function healthBadge(ago) {
@@ -638,19 +734,90 @@ function healthBadge(ago) {
 }
 
 // ====== CRON CATEGORIES ======
+const CRON_CATEGORIES = {
+  'airbnb-8am': '🏖️ AIRBNB',
+  'airbnb-11am': '🏖️ AIRBNB',
+  'airbnb-2pm': '🏖️ AIRBNB',
+  'airbnb-5pm': '🏖️ AIRBNB',
+  'airbnb-8pm-summary': '🏖️ AIRBNB',
+  'oss-scout-morning': '🐙 GITHUB OSS',
+  'oss-execute-afternoon': '🐙 GITHUB OSS',
+  'oss-evening-report': '🐙 GITHUB OSS',
+  'linkedin-github-posts': '💼 LINKEDIN',
+  'linkedin-network-growth': '💼 LINKEDIN',
+  'brightspace-wednesday-audit': '📚 BRIGHTSPACE',
+  'brightspace-thursday-execute': '📚 BRIGHTSPACE',
+  'brightspace-saturday-submit': '📚 BRIGHTSPACE',
+};
+
 function categorizeCron(name) {
-  if (name.startsWith('airbnb')) return 'Airbnb';
-  if (name.startsWith('oss-')) return 'OSS';
-  if (name.startsWith('linkedin')) return 'LinkedIn';
-  if (name.startsWith('brightspace')) return 'Brightspace';
-  if (name.startsWith('garden')) return 'System';
-  return 'System';
+  if (CRON_CATEGORIES[name]) return CRON_CATEGORIES[name];
+  return '⚡ SYSTEM';
+}
+
+const CATEGORY_ORDER = ['🏖️ AIRBNB', '🐙 GITHUB OSS', '💼 LINKEDIN', '📚 BRIGHTSPACE', '⚡ SYSTEM'];
+
+// ====== CRON ACTIONS ======
+async function runCron(cronId) {
+  const btn = event && event.target;
+  if (btn) { btn.disabled = true; btn.textContent = 'Running...'; }
+  try {
+    const res = await fetch('/api/cron/' + encodeURIComponent(cronId) + '/run', { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      if (btn) { btn.textContent = 'Started!'; btn.style.borderColor = 'var(--green)'; }
+      setTimeout(() => { fetchCrons(); fetchState(); }, 3000);
+    } else {
+      if (btn) { btn.textContent = 'Error'; btn.style.borderColor = 'var(--red)'; }
+    }
+  } catch (e) {
+    console.error('Run cron failed:', e);
+    if (btn) { btn.textContent = 'Error'; }
+  }
+  setTimeout(() => {
+    if (btn) { btn.disabled = false; btn.textContent = '▶ Run'; btn.style.borderColor = ''; }
+  }, 5000);
+}
+
+async function toggleCron(cronId) {
+  try {
+    const res = await fetch('/api/cron/' + encodeURIComponent(cronId) + '/toggle', { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      setTimeout(() => { fetchCrons(); fetchState(); }, 1000);
+    }
+  } catch (e) {
+    console.error('Toggle cron failed:', e);
+  }
+}
+
+// ====== RENDER CRON ROW ======
+function renderCronRow(c) {
+  const status = c.lastStatus || c.status || '';
+  const enabled = c.enabled !== false;
+  const nextRun = c.nextRun;
+  const lastDur = c.lastDurationMs ? (c.lastDurationMs / 1000).toFixed(0) + 's' : '';
+  const errors = c.consecutiveErrors > 0 ? ' <span class="red" title="' + c.consecutiveErrors + ' consecutive errors">⚠' + c.consecutiveErrors + '</span>' : '';
+
+  return '<div class="cron-row">' +
+    statusBadge(status) +
+    '<span class="cron-name" title="' + (c.description || c.name) + '">' + c.name + '</span>' +
+    errors +
+    '<span class="cron-time" title="Duration: ' + lastDur + '">' + fmtTimeUntil(nextRun) + '</span>' +
+    '<span class="cron-actions">' +
+      '<button class="btn-action btn-run" onclick="runCron(\'' + c.name + '\')" title="Run now">▶</button>' +
+      '<button class="btn-action ' + (enabled ? 'btn-disable' : 'btn-enable') + '" onclick="toggleCron(\'' + c.name + '\')" title="' + (enabled ? 'Disable' : 'Enable') + '">' +
+        (enabled ? '⏸' : '▶') +
+      '</button>' +
+    '</span>' +
+  '</div>';
 }
 
 // ====== RENDER ======
 function render() {
   if (!STATE) return;
   const s = STATE;
+  const crons = CRONS || s.crons || [];
 
   // Status bar
   if (s.infrastructure) {
@@ -659,7 +826,11 @@ function render() {
     document.getElementById('sb-ip').textContent = 'IP: ' + (s.infrastructure.ip || 'local');
   }
   const syncAge = Math.round((Date.now() - lastFetchTime) / 1000);
-  document.getElementById('sb-updated').textContent = 'LAST SYNC: ' + syncAge + 's ago';
+  document.getElementById('sb-updated').textContent = 'STATE: ' + syncAge + 's ago';
+  if (lastCronFetchTime) {
+    const cronAge = Math.round((Date.now() - lastCronFetchTime) / 1000);
+    document.getElementById('sb-cron-refresh').textContent = 'CRONS: ' + cronAge + 's ago';
+  }
   document.getElementById('sb-uptime').textContent = 'UPTIME: ' + fmtTime(s.timestamp);
 
   // System metrics
@@ -680,89 +851,96 @@ function render() {
     document.getElementById('sys-arch').textContent = s.infrastructure ? s.infrastructure.arch : '--';
   }
 
-  // Airbnb
-  if (s.airbnb) {
-    const a = s.airbnb;
-    document.getElementById('ab-listing').textContent = a.listing || '--';
-    document.getElementById('ab-location').textContent = a.location || '--';
-    document.getElementById('ab-minstay').textContent = a.minStay + ' nights';
-    document.getElementById('ab-bookings').textContent = a.bookings + ' reservas activas';
-    document.getElementById('ab-lastcheck').textContent = fmtTime(a.lastChecked);
-    document.getElementById('ab-price-ss1').textContent = '$' + (a.priceSemanaFuerte || '--').toLocaleString();
-    document.getElementById('ab-price-ss2').textContent = '$' + (a.priceSemanaSegunda || '--').toLocaleString();
-    document.getElementById('ab-price-reg').textContent = '$' + (a.priceRegular || '--').toLocaleString();
+  // Airbnb — hardcoded prices since state.json may not have them
+  const ssStart = new Date('2026-03-29T00:00:00-06:00');
+  const now = new Date();
+  const diffMs = ssStart - now;
+  const bookings = (s.airbnb && s.airbnb.bookings != null) ? s.airbnb.bookings : 0;
 
-    if (a.bookings === 0) {
-      document.getElementById('ab-warning').innerHTML = '<div class="warning-box">⚠ 0 RESERVAS ACTIVAS — Semana Santa approaching with no bookings!</div>';
-    } else {
-      document.getElementById('ab-warning').innerHTML = '';
-    }
+  document.getElementById('ab-price-ss1').textContent = '$3,200';
+  document.getElementById('ab-price-ss2').textContent = '$3,500';
+  document.getElementById('ab-price-reg').textContent = '$2,500';
+  document.getElementById('ab-bookings').textContent = bookings + ' reservas';
 
-    // Countdown
-    const ssStart = new Date(a.semanaSantaStart + 'T00:00:00-06:00');
-    const now = new Date();
-    const diffMs = ssStart - now;
-    if (diffMs > 0) {
-      const days = Math.floor(diffMs / 86400000);
-      const hrs = Math.floor((diffMs % 86400000) / 3600000);
-      document.getElementById('ss-days').textContent = days + 'd ' + hrs + 'h';
-    } else {
-      document.getElementById('ss-days').textContent = '🎉 EN CURSO';
-      document.getElementById('ss-days').style.color = 'var(--green)';
-    }
+  // Red alert for 0 bookings during Semana Santa
+  if (bookings === 0 && diffMs < 7 * 86400000) {
+    document.getElementById('ab-alert').innerHTML = '<div class="alert-box">🚨 RED ALERT — 0 reservas for Semana Santa! Mar 29 approaching with NO bookings!</div>';
+    document.getElementById('ab-warning').innerHTML = '';
+  } else if (bookings === 0) {
+    document.getElementById('ab-alert').innerHTML = '';
+    document.getElementById('ab-warning').innerHTML = '<div class="warning-box">⚠ 0 RESERVAS ACTIVAS — Semana Santa approaching with no bookings!</div>';
+  } else {
+    document.getElementById('ab-alert').innerHTML = '';
+    document.getElementById('ab-warning').innerHTML = '';
+  }
+
+  // Countdown
+  if (diffMs > 0) {
+    const days = Math.floor(diffMs / 86400000);
+    const hrs = Math.floor((diffMs % 86400000) / 3600000);
+    document.getElementById('ss-days').textContent = days + 'd ' + hrs + 'h';
+  } else {
+    document.getElementById('ss-days').textContent = '🎉 EN CURSO';
+    document.getElementById('ss-days').style.color = 'var(--green)';
+  }
+
+  // Airbnb crons in airbnb panel
+  const abCrons = crons.filter(c => c.name.startsWith('airbnb'));
+  if (abCrons.length) {
+    let html = '';
+    abCrons.forEach(c => {
+      html += '<div class="cron-row">' + statusBadge(c.lastStatus || '') +
+        '<span class="cron-name" style="font-size:11px;">' + c.name + '</span>' +
+        '<span class="cron-time">' + fmtTimeUntil(c.nextRun) + '</span></div>';
+    });
+    document.getElementById('ab-crons').innerHTML = html;
   }
 
   // OSS Pipeline
-  if (s.crons) {
-    const ossCrons = ['oss-scout-morning', 'oss-execute-afternoon', 'oss-evening-report'];
-    const ossLabels = { 'oss-scout-morning': '🔍 Scout (9am)', 'oss-execute-afternoon': '⚡ Execute (2pm)', 'oss-evening-report': '📊 Report (8pm)' };
-    let html = '';
-    ossCrons.forEach(name => {
-      const cron = s.crons.find(c => c.name === name);
-      if (cron) {
-        html += `<div class="cron-row">
-          ${statusBadge(cron.status)}
-          <span class="cron-name">${ossLabels[name]}</span>
-          <span class="cron-time">${cron.lastRun ? fmtTimeShort(cron.lastRun) : '--'}</span>
-        </div>`;
-      }
-    });
-    document.getElementById('oss-pipeline').innerHTML = html;
-  }
+  const ossCrons = ['oss-scout-morning', 'oss-execute-afternoon', 'oss-evening-report'];
+  const ossLabels = { 'oss-scout-morning': '🔍 Scout (9am)', 'oss-execute-afternoon': '⚡ Execute (2pm)', 'oss-evening-report': '📊 Report (8pm)' };
+  let ossHtml = '';
+  ossCrons.forEach(name => {
+    const cron = crons.find(c => c.name === name);
+    if (cron) {
+      const errors = cron.consecutiveErrors > 0 ? ' <span class="red">⚠' + cron.consecutiveErrors + '</span>' : '';
+      ossHtml += '<div class="cron-row">' +
+        statusBadge(cron.lastStatus || '') +
+        '<span class="cron-name">' + ossLabels[name] + '</span>' + errors +
+        '<span class="cron-time">' + fmtTimeUntil(cron.nextRun) + '</span>' +
+      '</div>';
+    }
+  });
+  document.getElementById('oss-pipeline').innerHTML = ossHtml;
 
-  // Crons
-  if (s.crons) {
-    document.getElementById('cron-count').textContent = s.crons.length + ' JOBS';
-    const groups = {};
-    s.crons.forEach(c => {
-      const cat = categorizeCron(c.name);
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(c);
+  // CRONS PANEL — all 17 grouped
+  document.getElementById('cron-count').textContent = crons.length + ' JOBS';
+  const groups = {};
+  crons.forEach(c => {
+    const cat = categorizeCron(c.name);
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(c);
+  });
+  let cronHtml = '';
+  CATEGORY_ORDER.forEach(cat => {
+    if (!groups[cat]) return;
+    cronHtml += '<div class="cron-group-title">' + cat + '</div>';
+    groups[cat].forEach(c => {
+      cronHtml += renderCronRow(c);
     });
-    const order = ['Airbnb', 'OSS', 'LinkedIn', 'Brightspace', 'System'];
-    let html = '';
-    order.forEach(cat => {
-      if (!groups[cat]) return;
-      html += `<div class="cron-group-title">${cat}</div>`;
-      groups[cat].forEach(c => {
-        html += `<div class="cron-row">
-          ${statusBadge(c.status)}
-          <span class="cron-name">${c.name}</span>
-          <span class="cron-time" title="Next: ${c.nextRun ? new Date(c.nextRun).toLocaleString() : '--'}">${c.lastRun ? fmtTime(c.lastRun) : '--'} → ${c.nextRun ? fmtTimeShort(c.nextRun) : '--'}</span>
-        </div>`;
-      });
-    });
-    document.getElementById('crons-body').innerHTML = html;
-  }
+  });
+  document.getElementById('crons-body').innerHTML = cronHtml;
 
-  // LinkedIn
-  if (s.linkedin) {
-    const li = s.linkedin;
-    document.getElementById('li-profile').textContent = li.profile || '--';
-    document.getElementById('li-posts').textContent = li.postCron || '--';
-    document.getElementById('li-growth').textContent = li.growthCron || '--';
-    document.getElementById('li-lang').textContent = li.language || '--';
-    document.getElementById('li-lastrun').textContent = li.lastNetworkRun ? fmtTime(li.lastNetworkRun) : 'Not yet';
+  // LinkedIn crons
+  const liCrons = crons.filter(c => c.name.startsWith('linkedin'));
+  if (liCrons.length) {
+    let html = '';
+    liCrons.forEach(c => {
+      html += '<div class="cron-row">' + statusBadge(c.lastStatus || '') +
+        '<span class="cron-name" style="font-size:11px;">' + c.name + '</span>' +
+        '<span class="cron-time">' + fmtTimeUntil(c.nextRun) + '</span></div>';
+    });
+    document.getElementById('li-crons').innerHTML = html;
   }
 
   // Projects
@@ -772,13 +950,13 @@ function render() {
     let html = '';
     names.forEach(name => {
       const p = s.projects[name];
-      html += `<div class="proj-row">
-        ${healthBadge(p.lastCommitAgo)}
-        <span class="proj-name">${name}</span>
-        ${p.dirty > 0 ? '<span class="proj-dirty">' + p.dirty + ' dirty</span>' : ''}
-        <span class="proj-msg">${p.lastCommitMsg || '--'}</span>
-        <span class="proj-time">${p.lastCommitAgo || '--'}</span>
-      </div>`;
+      html += '<div class="proj-row">' +
+        healthBadge(p.lastCommitAgo) +
+        '<span class="proj-name">' + name + '</span>' +
+        (p.dirty > 0 ? '<span class="proj-dirty">' + p.dirty + ' dirty</span>' : '') +
+        '<span class="proj-msg">' + (p.lastCommitMsg || '--') + '</span>' +
+        '<span class="proj-time">' + (p.lastCommitAgo || '--') + '</span>' +
+      '</div>';
     });
     document.getElementById('proj-list').innerHTML = html;
   }
@@ -795,22 +973,20 @@ function render() {
   }
 
   // Brightspace
-  if (s.crons) {
-    const bsCrons = ['brightspace-wednesday-audit', 'brightspace-thursday-execute', 'brightspace-saturday-submit'];
-    const bsLabels = { 'brightspace-wednesday-audit': '📋 Wednesday Audit', 'brightspace-thursday-execute': '⚡ Thursday Execute', 'brightspace-saturday-submit': '📤 Saturday Submit' };
-    let html = '';
-    bsCrons.forEach(name => {
-      const cron = s.crons.find(c => c.name === name);
-      if (cron) {
-        html += `<div class="cron-row">
-          ${statusBadge(cron.status)}
-          <span class="cron-name">${bsLabels[name]}</span>
-          <span class="cron-time">Next: ${cron.nextRun ? fmtTimeShort(cron.nextRun) : '--'}</span>
-        </div>`;
-      }
-    });
-    document.getElementById('bs-pipeline').innerHTML = html;
-  }
+  const bsCrons = ['brightspace-wednesday-audit', 'brightspace-thursday-execute', 'brightspace-saturday-submit'];
+  const bsLabels = { 'brightspace-wednesday-audit': '📋 Wednesday Audit', 'brightspace-thursday-execute': '⚡ Thursday Execute', 'brightspace-saturday-submit': '📤 Saturday Submit' };
+  let bsHtml = '';
+  bsCrons.forEach(name => {
+    const cron = crons.find(c => c.name === name);
+    if (cron) {
+      bsHtml += '<div class="cron-row">' +
+        statusBadge(cron.lastStatus || '') +
+        '<span class="cron-name">' + bsLabels[name] + '</span>' +
+        '<span class="cron-time">Next: ' + fmtTimeUntil(cron.nextRun) + '</span>' +
+      '</div>';
+    }
+  });
+  document.getElementById('bs-pipeline').innerHTML = bsHtml;
 
   // Model Strategy
   if (s.tokens) {
@@ -824,27 +1000,74 @@ function render() {
     document.getElementById('i-arch').textContent = s.infrastructure.arch || '--';
   }
 
-  // Activity Log — build from cron last runs
-  if (s.crons) {
-    const events = s.crons
-      .filter(c => c.lastRun)
-      .map(c => ({ name: c.name, time: c.lastRun, status: c.status }))
-      .sort((a, b) => b.time - a.time)
-      .slice(0, 10);
-    let html = '';
-    events.forEach(e => {
-      const icon = e.status === 'ok' ? '✓' : e.status === 'error' ? '✗' : '○';
-      const cls = e.status === 'ok' ? 'green' : e.status === 'error' ? 'red' : 'dim';
-      html += `<div class="log-entry"><span class="log-time">${fmtTimeShort(e.time)}</span> <span class="${cls}">${icon}</span> ${e.name}</div>`;
-    });
-    document.getElementById('activity-log').innerHTML = html || '<div class="dim">No recent activity</div>';
+  // Activity Log — build from cron data
+  const events = crons
+    .filter(c => c.lastStatus && c.lastStatus !== '')
+    .map(c => ({ name: c.name, status: c.lastStatus, dur: c.lastDurationMs, nextRun: c.nextRun }))
+    .sort((a, b) => (b.nextRun || 0) - (a.nextRun || 0))
+    .slice(0, 12);
+  let actHtml = '';
+  events.forEach(e => {
+    const icon = e.status === 'ok' ? '✓' : e.status === 'error' ? '✗' : '○';
+    const cls = e.status === 'ok' ? 'green' : e.status === 'error' ? 'red' : 'dim';
+    const dur = e.dur ? ' (' + (e.dur/1000).toFixed(0) + 's)' : '';
+    actHtml += '<div class="log-entry"><span class="' + cls + '">' + icon + '</span> ' + e.name + '<span class="dim">' + dur + '</span></div>';
+  });
+  document.getElementById('activity-log').innerHTML = actHtml || '<div class="dim">No recent activity</div>';
+}
+
+// ====== RENDER OSS PRS ======
+function renderOSSPRs(markdown) {
+  const prsEl = document.getElementById('oss-prs');
+  if (!markdown) { prsEl.innerHTML = '<div class="dim">Loading...</div>'; return; }
+
+  const prs = [];
+  // Parse active PRs from markdown table rows
+  const lines = markdown.split('\n');
+  let inActiveSection = false;
+  let currentRepo = '';
+
+  for (const line of lines) {
+    if (line.includes('Active PRs')) inActiveSection = true;
+    if (line.includes('New Opportunities')) inActiveSection = false;
+    if (!inActiveSection) continue;
+
+    // Capture repo names
+    const repoMatch = line.match(/###\s+(.+?)[\s(]/);
+    if (repoMatch) { currentRepo = repoMatch[1].trim(); continue; }
+
+    // Capture PR rows: | #2835 | fix: ... | ✅ Open | ...
+    const prMatch = line.match(/\|\s*#(\d+)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|/);
+    if (prMatch) {
+      const num = prMatch[1];
+      const title = prMatch[2].trim();
+      const status = prMatch[3].trim();
+      if (status.includes('MERGED')) {
+        prs.push({ num, title, status: 'merged', repo: currentRepo });
+      } else if (status.includes('Open')) {
+        prs.push({ num, title, status: 'open', repo: currentRepo });
+      }
+    }
   }
+
+  if (!prs.length) { prsEl.innerHTML = '<div class="dim">No active PRs found</div>'; return; }
+
+  let html = '';
+  prs.slice(0, 8).forEach(pr => {
+    const badge = pr.status === 'merged' ? '<span class="badge badge-ok">MERGED</span>' : '<span class="badge badge-running">OPEN</span>';
+    html += '<div class="oss-pr">' +
+      badge +
+      '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + pr.title + '">#' + pr.num + ' ' + pr.title + '</span>' +
+      '<span class="oss-pr-repo">' + (pr.repo || '') + '</span>' +
+    '</div>';
+  });
+  prsEl.innerHTML = html;
 }
 
 // ====== FETCH STATE ======
 async function fetchState() {
   try {
-    const res = await fetch('/state.json?t=' + Date.now());
+    const res = await fetch('/api/state?t=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
     STATE = await res.json();
     lastFetchTime = Date.now();
@@ -852,10 +1075,35 @@ async function fetchState() {
   } catch (e) {
     console.error('State fetch failed:', e);
     if (STATE) {
-      // Show warning but keep last data
       document.getElementById('sb-updated').textContent = 'SYNC FAILED';
       document.getElementById('sb-updated').style.color = 'var(--red)';
     }
+  }
+}
+
+// ====== FETCH CRONS (live from openclaw) ======
+async function fetchCrons() {
+  try {
+    const res = await fetch('/api/crons?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    CRONS = await res.json();
+    lastCronFetchTime = Date.now();
+    render();
+  } catch (e) {
+    console.error('Cron fetch failed:', e);
+  }
+}
+
+// ====== FETCH OSS QUEUE ======
+async function fetchOSSQueue() {
+  try {
+    const res = await fetch('/api/contribution-queue?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const md = await res.text();
+    renderOSSPRs(md);
+  } catch (e) {
+    console.error('OSS queue fetch failed:', e);
+    document.getElementById('oss-prs').innerHTML = '<div class="dim">Failed to load</div>';
   }
 }
 
@@ -891,22 +1139,30 @@ setInterval(() => {
   if (lastFetchTime) {
     const age = Math.round((Date.now() - lastFetchTime) / 1000);
     const el = document.getElementById('sb-updated');
-    el.textContent = 'LAST SYNC: ' + age + 's ago';
+    el.textContent = 'STATE: ' + age + 's ago';
     el.style.color = age > 90 ? 'var(--yellow)' : '';
+  }
+  if (lastCronFetchTime) {
+    const age = Math.round((Date.now() - lastCronFetchTime) / 1000);
+    document.getElementById('sb-cron-refresh').textContent = 'CRONS: ' + age + 's ago';
   }
 }, 5000);
 
 // ====== INIT ======
 fetchState();
-setInterval(fetchState, 60000);
+fetchCrons();
+fetchOSSQueue();
 fetchWeather();
-setInterval(fetchWeather, 600000); // refresh weather every 10 min
+
+setInterval(fetchState, 60000);       // state every 60s
+setInterval(fetchCrons, 30000);       // crons every 30s
+setInterval(fetchOSSQueue, 300000);   // OSS queue every 5min
+setInterval(fetchWeather, 600000);    // weather every 10min
 
 // Init Lucide icons after DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   if (window.lucide) lucide.createIcons();
 });
-// Also try after a short delay in case script loads late
 setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 500);
 </script>
 </body>

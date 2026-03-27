@@ -1,9 +1,10 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, exec } = require('child_process');
 const DIR = path.join(process.env.HOME, 'jeffrey/workspace/projects/jeffrey-os-dashboard');
 const PORT = 8080;
+const OC_PATH = 'PATH=/Users/magi/homebrew/bin:' + process.env.PATH;
 
 const MIME = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
@@ -26,31 +27,130 @@ function regenState() {
 regenState();
 setInterval(regenState, 15000);
 
+const startTime = Date.now();
+
+function corsHeaders(contentType) {
+  return {
+    'Content-Type': contentType || 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Cache-Control': 'no-cache, no-store'
+  };
+}
+
+function jsonRes(res, code, data) {
+  res.writeHead(code, corsHeaders());
+  res.end(JSON.stringify(data));
+}
+
+function runOC(cmd) {
+  return execSync(cmd, { env: { ...process.env, PATH: '/Users/magi/homebrew/bin:' + process.env.PATH }, timeout: 30000, encoding: 'utf8' });
+}
+
 const server = http.createServer((req, res) => {
   let urlPath = req.url.split('?')[0];
 
-  // /api/health endpoint
-  if (urlPath === '/api/health') {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeaders());
+    res.end();
+    return;
+  }
+
+  // === API ROUTES ===
+
+  // GET /api/health
+  if (urlPath === '/api/health' && req.method === 'GET') {
     const stateFile = path.join(DIR, 'state.json');
     let stateAge = -1;
     try {
       const stat = fs.statSync(stateFile);
       stateAge = Math.round((Date.now() - stat.mtimeMs) / 1000);
     } catch (e) { /* no state file yet */ }
-    const health = {
+    return jsonRes(res, 200, {
+      ok: true,
       status: stateAge >= 0 && stateAge < 60 ? 'healthy' : 'degraded',
       stateAgeSeconds: stateAge,
-      uptime: process.uptime(),
-      timestamp: new Date().toISOString(),
-    };
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-    res.end(JSON.stringify(health));
+      uptime: Math.round((Date.now() - startTime) / 1000),
+      time: new Date().toISOString(),
+    });
+  }
+
+  // GET /api/state
+  if ((urlPath === '/api/state' || urlPath === '/state.json') && req.method === 'GET') {
+    const stateFile = path.join(DIR, 'state.json');
+    try {
+      const data = fs.readFileSync(stateFile, 'utf8');
+      res.writeHead(200, corsHeaders());
+      res.end(data);
+    } catch (e) {
+      jsonRes(res, 500, { error: 'state.json not found' });
+    }
     return;
   }
 
-  // Route mapping
-  if (urlPath === '/api/state' || urlPath === '/state.json') urlPath = '/state.json';
-  else if (urlPath === '/' || urlPath === '/dashboard.html') urlPath = '/index.html';
+  // GET /api/crons — live from openclaw
+  if (urlPath === '/api/crons' && req.method === 'GET') {
+    try {
+      const output = runOC('openclaw cron list --json');
+      res.writeHead(200, corsHeaders());
+      res.end(output);
+    } catch (e) {
+      // Fallback to state.json crons
+      try {
+        const state = JSON.parse(fs.readFileSync(path.join(DIR, 'state.json'), 'utf8'));
+        return jsonRes(res, 200, state.crons || []);
+      } catch (e2) {
+        return jsonRes(res, 500, { error: 'Failed to get crons', detail: e.message });
+      }
+    }
+    return;
+  }
+
+  // POST /api/cron/:id/run
+  const runMatch = urlPath.match(/^\/api\/cron\/([^/]+)\/run$/);
+  if (runMatch && req.method === 'POST') {
+    const cronId = decodeURIComponent(runMatch[1]);
+    try {
+      const output = runOC(`openclaw cron run ${cronId}`);
+      return jsonRes(res, 200, { ok: true, cron: cronId, output: output.trim() });
+    } catch (e) {
+      return jsonRes(res, 500, { ok: false, cron: cronId, error: e.message });
+    }
+  }
+
+  // POST /api/cron/:id/toggle
+  const toggleMatch = urlPath.match(/^\/api\/cron\/([^/]+)\/toggle$/);
+  if (toggleMatch && req.method === 'POST') {
+    const cronId = decodeURIComponent(toggleMatch[1]);
+    try {
+      // Check current state from state.json
+      const state = JSON.parse(fs.readFileSync(path.join(DIR, 'state.json'), 'utf8'));
+      const cron = (state.crons || []).find(c => c.name === cronId);
+      const action = cron && cron.enabled ? 'disable' : 'enable';
+      const output = runOC(`openclaw cron ${action} ${cronId}`);
+      return jsonRes(res, 200, { ok: true, cron: cronId, action, output: output.trim() });
+    } catch (e) {
+      return jsonRes(res, 500, { ok: false, cron: cronId, error: e.message });
+    }
+  }
+
+  // GET /api/contribution-queue
+  if (urlPath === '/api/contribution-queue' && req.method === 'GET') {
+    const queueFile = path.join(process.env.HOME, 'jeffrey/workspace/projects/contribution-queue.md');
+    try {
+      const data = fs.readFileSync(queueFile, 'utf8');
+      res.writeHead(200, corsHeaders('text/plain'));
+      res.end(data);
+    } catch (e) {
+      jsonRes(res, 500, { error: 'contribution-queue.md not found' });
+    }
+    return;
+  }
+
+  // === STATIC FILES ===
+  if (urlPath === '/' || urlPath === '/dashboard.html') urlPath = '/index.html';
 
   // Prevent path traversal
   const filePath = path.join(DIR, path.normalize(urlPath));
@@ -78,6 +178,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Jeffrey OS Dashboard v6.0 running on http://0.0.0.0:${PORT}`);
-  console.log(`State refresh: 15s | Health: http://0.0.0.0:${PORT}/api/health`);
+  console.log(`Jeffrey OS Dashboard v6.1 running on http://0.0.0.0:${PORT}`);
+  console.log(`API: /api/state, /api/crons, /api/cron/:id/run, /api/cron/:id/toggle, /api/health`);
+  console.log(`State refresh: 15s`);
 });
