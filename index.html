@@ -556,11 +556,12 @@ body {
       </div>
     </div>
 
-    <!-- 11. SECURITY / ACTIVITY LOG -->
+    <!-- 11. TERMINAL LOG -->
     <div class="panel col-4" id="p-activity">
-      <div class="panel-header"><span class="icon"><i data-lucide="shield"></i></span> ACTIVITY LOG</div>
-      <div class="panel-body" id="activity-body">
-        <div id="activity-log"></div>
+      <div class="panel-header"><span class="icon"><i data-lucide="terminal"></i></span> TERMINAL LOG <span id="log-live" style="font-size:10px;color:var(--green);margin-left:8px;">● LIVE</span></div>
+      <div class="panel-body" id="activity-body" style="padding:0;">
+        <div id="terminal-log" style="font-family:'Share Tech Mono',monospace;font-size:10px;line-height:1.6;color:#0f0;background:#000;padding:10px;height:220px;overflow-y:auto;border-radius:0 0 8px 8px;"></div>
+        <div id="activity-log" style="display:none;"></div>
       </div>
     </div>
 
@@ -793,9 +794,11 @@ async function toggleCron(cronId) {
 
 // ====== RENDER CRON ROW ======
 function renderCronRow(c) {
-  const status = c.lastStatus || c.status || '';
+  // Handle both flat format and openclaw nested format {state: {lastStatus, nextRunAtMs}}
+  const st = c.state || {};
+  const status = c.lastStatus || c.status || st.lastStatus || st.lastRunStatus || '';
   const enabled = c.enabled !== false;
-  const nextRun = c.nextRun;
+  const nextRun = c.nextRun || st.nextRunAtMs;
   const lastDur = c.lastDurationMs ? (c.lastDurationMs / 1000).toFixed(0) + 's' : '';
   const errors = c.consecutiveErrors > 0 ? ' <span class="red" title="' + c.consecutiveErrors + ' consecutive errors">⚠' + c.consecutiveErrors + '</span>' : '';
 
@@ -805,8 +808,8 @@ function renderCronRow(c) {
     errors +
     '<span class="cron-time" title="Duration: ' + lastDur + '">' + fmtTimeUntil(nextRun) + '</span>' +
     '<span class="cron-actions">' +
-      '<button class="btn-action btn-run" onclick="runCron(\'' + c.name + '\')" title="Run now">▶</button>' +
-      '<button class="btn-action ' + (enabled ? 'btn-disable' : 'btn-enable') + '" onclick="toggleCron(\'' + c.name + '\')" title="' + (enabled ? 'Disable' : 'Enable') + '">' +
+      '<button class="btn-action btn-run" onclick="runCron(\'' + (c.id || c.name) + '\')" title="Run now">▶</button>' +
+      '<button class="btn-action ' + (enabled ? 'btn-disable' : 'btn-enable') + '" onclick="toggleCron(\'' + (c.id || c.name) + '\')" title="' + (enabled ? 'Disable' : 'Enable') + '">' +
         (enabled ? '⏸' : '▶') +
       '</button>' +
     '</span>' +
@@ -814,10 +817,23 @@ function renderCronRow(c) {
 }
 
 // ====== RENDER ======
+function normalizeCrons(list) {
+  return (list || []).map(c => {
+    const st = c.state || {};
+    return Object.assign({}, c, {
+      lastStatus: c.lastStatus || st.lastStatus || st.lastRunStatus || 'idle',
+      nextRun: c.nextRun || st.nextRunAtMs,
+      lastRun: c.lastRun || st.lastRunAtMs,
+      consecutiveErrors: c.consecutiveErrors != null ? c.consecutiveErrors : (st.consecutiveErrors || 0),
+      lastDurationMs: c.lastDurationMs || st.lastDurationMs
+    });
+  });
+}
+
 function render() {
   if (!STATE) return;
   const s = STATE;
-  const crons = CRONS || s.crons || [];
+  const crons = normalizeCrons(CRONS || s.crons || []);
 
   // Status bar
   if (s.infrastructure) {
@@ -1086,7 +1102,9 @@ async function fetchCrons() {
   try {
     const res = await fetch('/api/crons?t=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    CRONS = await res.json();
+    const data = await res.json();
+    // API returns {jobs: [...]} or array directly
+    CRONS = Array.isArray(data) ? data : (data.jobs || data.crons || []);
     lastCronFetchTime = Date.now();
     render();
   } catch (e) {
@@ -1149,15 +1167,35 @@ setInterval(() => {
 }, 5000);
 
 // ====== INIT ======
+// ====== TERMINAL LOG ======
+async function fetchLog() {
+  try {
+    const res = await fetch('/api/cron-log?t=' + Date.now());
+    if (!res.ok) return;
+    const data = await res.json();
+    const el = document.getElementById('terminal-log');
+    if (!el) return;
+    const levelColor = { 'ERROR': '#f55', 'WARN': '#ff0', 'INFO': '#0f0', 'DEBUG': '#08f' };
+    el.innerHTML = (data.lines || []).map(l => {
+      const t = l.time ? new Date(l.time).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:'America/Mexico_City'}) : '';
+      const col = levelColor[l.level] || '#0f0';
+      return '<div><span style="color:#555;">' + t + '</span> <span style="color:' + col + ';">[' + (l.level||'INFO') + ']</span> <span style="color:#cfc;">' + (l.msg||'').replace(/</g,'&lt;').slice(0,90) + '</span></div>';
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+  } catch(e) { console.error('Log fetch failed:', e); }
+}
+
 fetchState();
 fetchCrons();
 fetchOSSQueue();
 fetchWeather();
+fetchLog();
 
 setInterval(fetchState, 60000);       // state every 60s
 setInterval(fetchCrons, 30000);       // crons every 30s
 setInterval(fetchOSSQueue, 300000);   // OSS queue every 5min
 setInterval(fetchWeather, 600000);    // weather every 10min
+setInterval(fetchLog, 10000);         // terminal log every 10s
 
 // Init Lucide icons after DOM ready
 document.addEventListener('DOMContentLoaded', () => {

@@ -136,6 +136,28 @@ const server = http.createServer((req, res) => {
     }
   }
 
+  // GET /api/cron-log — last 60 lines of openclaw log
+  if (urlPath === '/api/cron-log' && req.method === 'GET') {
+    try {
+      const today = new Date().toISOString().slice(0,10);
+      const logFile = `/tmp/openclaw/openclaw-${today}.log`;
+      const raw = fs.readFileSync(logFile, 'utf8').split('\n').filter(Boolean).slice(-60);
+      const lines = raw.map(l => {
+        try {
+          const j = JSON.parse(l);
+          const msg = typeof j[2] === 'string' ? j[2] : (typeof j[1] === 'string' ? j[1] : JSON.stringify(j[1])).slice(0,120);
+          return { time: j.time || j._meta?.date, level: j._meta?.logLevelName || 'INFO', msg };
+        } catch { return { time: new Date().toISOString(), level: 'INFO', msg: l.slice(0,120) }; }
+      });
+      res.writeHead(200, corsHeaders());
+      res.end(JSON.stringify({ lines }));
+    } catch(e) {
+      res.writeHead(200, corsHeaders());
+      res.end(JSON.stringify({ lines: [] }));
+    }
+    return;
+  }
+
   // GET /api/contribution-queue
   if (urlPath === '/api/contribution-queue' && req.method === 'GET') {
     const queueFile = path.join(process.env.HOME, 'jeffrey/workspace/projects/contribution-queue.md');
