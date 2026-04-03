@@ -145,8 +145,16 @@ const server = http.createServer((req, res) => {
       const lines = raw.map(l => {
         try {
           const j = JSON.parse(l);
-          const msg = typeof j[2] === 'string' ? j[2] : (typeof j[1] === 'string' ? j[1] : JSON.stringify(j[1])).slice(0,120);
-          return { time: j.time || j._meta?.date, level: j._meta?.logLevelName || 'INFO', msg };
+          // OpenClaw logs are JSON objects with msg/message fields, or sometimes arrays
+          let msg;
+          if (typeof j.msg === 'string') msg = j.msg;
+          else if (typeof j.message === 'string') msg = j.message;
+          else if (typeof j[2] === 'string') msg = j[2];
+          else if (typeof j[1] === 'string') msg = j[1];
+          else msg = JSON.stringify(j.msg || j.message || j[1] || j).slice(0, 120);
+          const time = j.time || j.timestamp || j._meta?.date;
+          const level = j.level || j._meta?.logLevelName || j.logLevel || 'INFO';
+          return { time, level: String(level).toUpperCase(), msg: String(msg).slice(0, 120) };
         } catch { return { time: new Date().toISOString(), level: 'INFO', msg: l.slice(0,120) }; }
       });
       res.writeHead(200, corsHeaders());

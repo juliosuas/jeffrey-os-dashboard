@@ -807,6 +807,7 @@ body {
   </div>
 </div>
 
+<script src="briefing.js"></script>
 <script>
 // ====== MATRIX RAIN ======
 (function() {
@@ -1062,7 +1063,9 @@ function render() {
     const cronAge = Math.round((Date.now() - lastCronFetchTime) / 1000);
     document.getElementById('sb-cron-refresh').textContent = 'CRONS: ' + cronAge + 's ago';
   }
-  document.getElementById('sb-uptime').textContent = 'UPTIME: ' + fmtTime(s.timestamp);
+  // Parse real uptime from system uptime string (e.g. "10:07  up 1 day, 21:43, ...")
+  const uptimeMatch = s.uptime ? s.uptime.match(/up\s+(.+?),\s*\d+\s*user/) : null;
+  document.getElementById('sb-uptime').textContent = 'UPTIME: ' + (uptimeMatch ? uptimeMatch[1].trim() : fmtTime(s.timestamp));
 
   // System metrics
   if (s.system) {
@@ -1094,10 +1097,10 @@ function render() {
   document.getElementById('ab-bookings').textContent = bookings + ' reservas';
 
   // Red alert for 0 bookings during Semana Santa
-  if (bookings === 0 && diffMs < 7 * 86400000) {
+  if (bookings === 0 && diffMs > 0 && diffMs < 7 * 86400000) {
     document.getElementById('ab-alert').innerHTML = '<div class="alert-box">🚨 RED ALERT — 0 reservas for Semana Santa! Mar 29 approaching with NO bookings!</div>';
     document.getElementById('ab-warning').innerHTML = '';
-  } else if (bookings === 0) {
+  } else if (bookings === 0 && diffMs > 0) {
     document.getElementById('ab-alert').innerHTML = '';
     document.getElementById('ab-warning').innerHTML = '<div class="warning-box">⚠ 0 RESERVAS ACTIVAS — Semana Santa approaching with no bookings!</div>';
   } else {
@@ -1511,6 +1514,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 500);
 </script>
-<script src="briefing.js"></script>
 </body>
 </html>
