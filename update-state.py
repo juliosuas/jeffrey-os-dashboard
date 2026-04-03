@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Generate state.json for Jeffrey OS Dashboard v5 — real-time system + project data"""
-import json, subprocess, os, time, platform
+"""Generate state.json for Jeffrey OS Dashboard v6 — real-time system + project + PR + weather data"""
+import json, subprocess, os, time, platform, urllib.request, urllib.error
 from datetime import datetime, timezone, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -163,14 +163,90 @@ def get_uptime():
     raw = run("uptime")
     return raw
 
+def get_github_prs():
+    """Fetch open GitHub PRs authored by juliosuas using gh CLI."""
+    try:
+        raw = run(
+            "gh pr list --author juliosuas --limit 20 --json number,title,state,mergeable,repository 2>/dev/null",
+            timeout=15
+        )
+        if not raw:
+            return []
+        prs = json.loads(raw)
+        return prs if isinstance(prs, list) else []
+    except Exception as e:
+        print(f"PR fetch failed: {e}")
+        return []
+
+def get_weather():
+    """Fetch weather for Mexico City and Acapulco from wttr.in."""
+    result = {}
+    cities = {"cdmx": "Mexico+City", "acapulco": "Acapulco"}
+    for key, city in cities.items():
+        try:
+            url = f"https://wttr.in/{city}?format=j1"
+            req = urllib.request.Request(url, headers={"User-Agent": "curl/7.68.0"})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = json.loads(resp.read())
+            cur = data["current_condition"][0]
+            result[key] = {
+                "temp": cur.get("temp_C", "?"),
+                "feelsLike": cur.get("FeelsLikeC", "?"),
+                "humidity": cur.get("humidity", "?"),
+                "condition": cur.get("weatherDesc", [{}])[0].get("value", "Unknown"),
+                "windKph": cur.get("windspeedKmph", "?"),
+                "icon": _weather_icon(cur.get("weatherCode", "113")),
+                "updated": now.isoformat(),
+            }
+        except Exception as e:
+            print(f"Weather fetch failed for {city}: {e}")
+            result[key] = None
+    return result
+
+def _weather_icon(code):
+    """Map wttr.in weather code to emoji icon."""
+    code = str(code)
+    sunny = {"113"}
+    partly = {"116", "119"}
+    overcast = {"122"}
+    fog = {"143", "248", "260"}
+    rain = {"176", "185", "263", "266", "281", "284", "293", "296", "299", "302", "305", "308", "311", "314", "317", "320", "353", "356", "359", "362", "365"}
+    thunder = {"200", "386", "389", "392", "395"}
+    snow = {"179", "182", "323", "326", "329", "332", "335", "338", "368", "371", "374", "377"}
+    if code in sunny: return "☀️"
+    if code in partly: return "⛅"
+    if code in overcast: return "☁️"
+    if code in fog: return "🌫️"
+    if code in thunder: return "⛈️"
+    if code in snow: return "❄️"
+    if code in rain: return "🌧️"
+    return "🌤️"
+
+def get_openclaw_status():
+    """Check OpenClaw system health."""
+    try:
+        raw = run("~/homebrew/bin/openclaw doctor --non-interactive 2>&1", timeout=15)
+        if not raw:
+            return {"status": "unknown", "raw": ""}
+        ok = "all systems" in raw.lower() or "healthy" in raw.lower() or "ok" in raw.lower()
+        return {
+            "status": "ok" if ok else "warn",
+            "raw": raw[:500],
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
 # Build state — parallelize
-with ThreadPoolExecutor(max_workers=6) as pool:
+with ThreadPoolExecutor(max_workers=8) as pool:
     f_projects = pool.submit(get_all_projects)
     f_crons = pool.submit(get_crons)
     f_garden = pool.submit(get_garden_stats)
     f_metrics = pool.submit(get_system_metrics)
     f_uptime = pool.submit(get_uptime)
     f_hostname = pool.submit(run, "hostname")
+    f_prs = pool.submit(get_github_prs)
+    f_weather = pool.submit(get_weather)
+    f_oc_status = pool.submit(get_openclaw_status)
 
 state = {
     "timestamp": now.isoformat(),
@@ -180,6 +256,9 @@ state = {
     "garden": f_garden.result(),
     "projects": f_projects.result(),
     "crons": f_crons.result(),
+    "prs": f_prs.result(),
+    "weather": f_weather.result(),
+    "openclawStatus": f_oc_status.result(),
     "infrastructure": {
         "host": "Mac mini M4",
         "ip": "192.168.1.66",
@@ -201,6 +280,10 @@ with open(OUTPUT, "w") as f:
 gs = state["garden"]
 proj_count = len(state["projects"])
 active_count = sum(1 for p in state["projects"].values() if p["health"] == "active")
+pr_count = len(state["prs"])
+cdmx_weather = state["weather"].get("cdmx") or {}
 print(f"State updated: {now.strftime('%Y-%m-%d %H:%M:%S')} CDT")
 print(f"Projects: {proj_count} total, {active_count} active today")
 print(f"Garden: v{gs.get('version',0)} | {gs.get('citizens',0)} citizens, {gs.get('plants',0)} plants")
+print(f"GitHub PRs: {pr_count} open")
+print(f"Weather CDMX: {cdmx_weather.get('temp','?')}°C {cdmx_weather.get('condition','')}")

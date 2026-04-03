@@ -353,6 +353,130 @@ body {
 .crons-scroll::-webkit-scrollbar { width: 4px; }
 .crons-scroll::-webkit-scrollbar-track { background: transparent; }
 .crons-scroll::-webkit-scrollbar-thumb { background: rgba(0,255,65,0.2); border-radius: 2px; }
+
+/* ====== BRIEFING PANEL ====== */
+.briefing-panel {
+  background: linear-gradient(135deg, rgba(0,15,10,0.95) 0%, rgba(0,30,20,0.9) 100%);
+  border: 1px solid rgba(0,255,65,0.35);
+  border-radius: 8px;
+  padding: 20px 24px;
+  display: flex; align-items: center; gap: 24px;
+  flex-wrap: wrap;
+  box-shadow: 0 0 24px rgba(0,255,65,0.12), inset 0 0 40px rgba(0,255,65,0.03);
+}
+.briefing-clock { flex: 0 0 auto; text-align: center; }
+.briefing-clock .time {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(28px, 4vw, 52px);
+  font-weight: 900;
+  color: var(--green);
+  letter-spacing: 4px;
+  text-shadow: 0 0 20px rgba(0,255,65,0.5);
+  line-height: 1;
+}
+.briefing-clock .date {
+  font-size: 10px; letter-spacing: 3px;
+  color: var(--cyan); opacity: 0.8; margin-top: 4px;
+}
+.briefing-weather {
+  flex: 0 0 auto; text-align: center;
+  border-left: 1px solid var(--border); padding-left: 20px;
+  min-width: 140px;
+}
+.weather-temp {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 28px; font-weight: 700;
+  color: var(--cyan);
+}
+.weather-icon { font-size: 24px; display: block; margin: 2px 0; }
+.weather-cond { font-size: 11px; opacity: 0.7; letter-spacing: 1px; }
+.briefing-actions {
+  flex: 0 0 auto; display: flex; flex-direction: column;
+  gap: 8px; border-left: 1px solid var(--border); padding-left: 20px;
+}
+#briefing-play-btn {
+  background: rgba(0,255,65,0.1); border: 1px solid var(--green);
+  color: var(--green); font-family: 'Orbitron', sans-serif;
+  font-size: 11px; letter-spacing: 2px; padding: 8px 16px;
+  border-radius: 4px; cursor: pointer; transition: all 0.2s;
+  text-transform: uppercase;
+}
+#briefing-play-btn:hover, #briefing-play-btn.active {
+  background: rgba(0,255,65,0.2); box-shadow: 0 0 12px rgba(0,255,65,0.3);
+}
+.briefing-speaking {
+  display: none; align-items: center; gap: 6px;
+  color: var(--green); font-size: 10px; letter-spacing: 1px;
+}
+.speaking-bars { display: flex; align-items: flex-end; gap: 2px; height: 16px; }
+.speaking-bars span {
+  width: 3px; background: var(--green); border-radius: 2px;
+  animation: soundwave 0.6s ease infinite alternate;
+}
+.speaking-bars span:nth-child(2) { animation-delay: 0.1s; }
+.speaking-bars span:nth-child(3) { animation-delay: 0.2s; }
+.speaking-bars span:nth-child(4) { animation-delay: 0.15s; }
+.speaking-bars span:nth-child(5) { animation-delay: 0.05s; }
+@keyframes soundwave {
+  from { height: 4px; } to { height: 14px; }
+}
+.briefing-summary { flex: 1; min-width: 200px; font-size: 12px; line-height: 1.8; opacity: 0.85; }
+.briefing-summary .sb { color: var(--cyan); font-weight: bold; }
+
+/* ====== HN NEWS FEED ====== */
+.hn-story {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid rgba(0,255,65,0.08);
+  cursor: pointer; transition: background 0.15s;
+}
+.hn-story:last-child { border-bottom: none; }
+.hn-story:hover { background: rgba(0,255,65,0.05); border-radius: 4px; padding-left: 4px; }
+.hn-rank {
+  flex: 0 0 20px; text-align: center;
+  font-family: 'Orbitron', sans-serif; font-size: 11px;
+  color: var(--cyan); opacity: 0.7; padding-top: 1px;
+}
+.hn-content { flex: 1; min-width: 0; }
+.hn-title { font-size: 12px; line-height: 1.4; color: var(--green); word-break: break-word; }
+.hn-meta { font-size: 10px; opacity: 0.45; margin-top: 2px; }
+.hn-error { color: var(--red); font-size: 12px; opacity: 0.7; padding: 8px 0; }
+.hn-updated { font-size: 10px; opacity: 0.3; text-align: right; margin-top: 6px; }
+
+/* ====== PR INTELLIGENCE ====== */
+.pr-repo-header {
+  font-family: 'Orbitron', sans-serif; font-size: 9px; letter-spacing: 2px;
+  color: var(--purple); margin: 10px 0 4px; opacity: 0.9;
+  text-transform: uppercase;
+}
+.pr-repo-header:first-child { margin-top: 0; }
+.pr-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0; border-bottom: 1px solid rgba(0,255,65,0.06);
+  font-size: 11px;
+}
+.pr-row:last-child { border-bottom: none; }
+.pr-title {
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  opacity: 0.85;
+}
+.badge-error { background: rgba(255,51,51,0.1); border-color: var(--red); color: var(--red); }
+.badge-ok { background: rgba(0,255,65,0.1); border-color: var(--green); color: var(--green); }
+.badge-idle { background: rgba(255,204,0,0.08); border-color: var(--yellow); color: var(--yellow); }
+
+/* ====== SYSTEM HEALTH EXTRAS ====== */
+.health-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 0; border-bottom: 1px solid rgba(0,255,65,0.06);
+  font-size: 12px;
+}
+.health-item:last-child { border-bottom: none; }
+.health-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block; margin-right: 6px;
+}
+.h-ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.h-warn { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+.h-err { background: var(--red); box-shadow: 0 0 6px var(--red); }
 </style>
 </head>
 <body>
@@ -395,6 +519,38 @@ body {
 
   <!-- Grid -->
   <div class="grid">
+
+    <!-- 0. MORNING BRIEFING PANEL (full width) -->
+    <div class="col-12" id="p-briefing">
+      <div class="briefing-panel">
+        <!-- Clock -->
+        <div class="briefing-clock">
+          <div class="time" id="briefing-time">--:--:--</div>
+          <div class="date" id="briefing-date">LOADING...</div>
+        </div>
+        <!-- Weather -->
+        <div class="briefing-weather">
+          <div id="briefing-weather"><span class="dim">Weather loading...</span></div>
+        </div>
+        <!-- Actions -->
+        <div class="briefing-actions">
+          <button id="briefing-play-btn" onclick="toggleBriefing()">▶ PLAY BRIEFING</button>
+          <div class="briefing-speaking" id="briefing-speaking">
+            <div class="speaking-bars">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            SPEAKING...
+          </div>
+        </div>
+        <!-- Summary Stats -->
+        <div class="briefing-summary">
+          <span class="sb">SYSTEM</span> · Load <span id="brf-load">--</span> · RAM <span id="brf-ram">--</span>%<br>
+          <span class="sb">PROJECTS</span> · <span id="brf-active">--</span> active / <span id="brf-total">--</span> total<br>
+          <span class="sb">OPEN PRS</span> · <span id="brf-prs">--</span> awaiting review<br>
+          <span class="sb">GARDEN</span> · <span id="brf-garden">--</span>
+        </div>
+      </div>
+    </div>
 
     <!-- 1. SYSTEM METRICS -->
     <div class="panel col-4" id="p-system">
@@ -585,10 +741,69 @@ body {
       </div>
     </div>
 
+    <!-- 13. PR INTELLIGENCE PANEL -->
+    <div class="panel col-4" id="p-pr-intel">
+      <div class="panel-header">
+        <span class="icon"><i data-lucide="git-pull-request"></i></span>
+        PR INTELLIGENCE
+        <span id="pr-intel-count" style="margin-left:auto;font-family:'Share Tech Mono';font-size:10px;color:var(--purple);">--</span>
+      </div>
+      <div class="panel-body">
+        <div id="pr-intel-list"><div class="dim">Loading PRs...</div></div>
+      </div>
+    </div>
+
+    <!-- 14. HACKER NEWS FEED -->
+    <div class="panel col-4" id="p-hn-feed">
+      <div class="panel-header">
+        <span class="icon"><i data-lucide="newspaper"></i></span>
+        HACKER NEWS
+        <span id="hn-updated" class="hn-updated" style="margin-left:auto;"></span>
+      </div>
+      <div class="panel-body" style="padding:10px 16px;">
+        <div id="hn-feed"><div class="dim">Loading news...</div></div>
+      </div>
+    </div>
+
+    <!-- 15. SYSTEM HEALTH EXTENDED -->
+    <div class="panel col-4" id="p-health">
+      <div class="panel-header"><span class="icon"><i data-lucide="shield-check"></i></span> SYSTEM HEALTH</div>
+      <div class="panel-body" id="health-body">
+        <div class="health-item">
+          <span><span class="health-dot h-ok" id="hd-openclaw"></span>OpenClaw</span>
+          <span id="hs-openclaw" class="green">--</span>
+        </div>
+        <div class="health-item">
+          <span><span class="health-dot h-ok" id="hd-whatsapp"></span>WhatsApp</span>
+          <span id="hs-whatsapp" class="green">CONNECTED</span>
+        </div>
+        <div class="health-item">
+          <span><span class="health-dot" id="hd-imsg" style="background:var(--cyan);"></span>iMessage</span>
+          <span id="hs-imsg" class="cyan">ACTIVE</span>
+        </div>
+        <div class="health-item">
+          <span><span class="health-dot h-ok"></span>Dashboard</span>
+          <span class="green">:8080 LIVE</span>
+        </div>
+        <div class="health-item">
+          <span><span class="health-dot" id="hd-state"></span>State Feed</span>
+          <span id="hs-state">--</span>
+        </div>
+        <div style="margin-top:10px;">
+          <div class="section-title">CRON ERRORS</div>
+          <div id="hs-cron-errors" class="dim" style="font-size:11px;">--</div>
+        </div>
+        <div style="margin-top:8px;">
+          <div class="section-title">OPENCLAW STATUS</div>
+          <div id="hs-oc-detail" style="font-size:10px; opacity:0.5; max-height:60px; overflow:auto;">--</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /grid -->
 
   <div style="text-align:center; padding:16px; font-size:10px; opacity:0.2;">
-    JEFFREY OS v6.1 // Built by Jeffrey for Julio // Mac mini M4 // <span id="footer-time"></span>
+    JEFFREY OS v6.2 // Built by Jeffrey for Julio // Mac mini M4 // <span id="footer-time"></span>
   </div>
 </div>
 
@@ -1016,6 +1231,99 @@ function render() {
     document.getElementById('i-arch').textContent = s.infrastructure.arch || '--';
   }
 
+  // ====== BRIEFING PANEL STATS ======
+  if (s.system) {
+    const load = s.system.loadAvg && s.system.loadAvg.length ? s.system.loadAvg[0] : '--';
+    const memPct = s.system.memPercent ?? '--';
+    const el = document.getElementById('brf-load');
+    if (el) el.textContent = load;
+    const el2 = document.getElementById('brf-ram');
+    if (el2) el2.textContent = memPct;
+  }
+  if (s.projects) {
+    const allProj = Object.values(s.projects);
+    const act = allProj.filter(p => p.health === 'active').length;
+    const el = document.getElementById('brf-active'); if (el) el.textContent = act;
+    const el2 = document.getElementById('brf-total'); if (el2) el2.textContent = allProj.length;
+  }
+  if (s.prs) {
+    const openCount = s.prs.filter(p => p.state === 'OPEN').length;
+    const el = document.getElementById('brf-prs'); if (el) el.textContent = openCount || 'none';
+    // Update PR Intelligence panel
+    if (window.renderPRIntelligence) renderPRIntelligence(s.prs);
+  }
+  if (s.garden) {
+    const g = s.garden;
+    const el = document.getElementById('brf-garden');
+    if (el) el.textContent = 'v' + g.version + ' · ' + g.citizens + ' citizens · ' + g.plants + ' plants';
+  }
+
+  // ====== BRIEFING WEATHER ======
+  if (s.weather) {
+    if (window.updateBriefingWeather) updateBriefingWeather(s.weather);
+    // Also update weather panel from state (if wttr.in is blocked, use state)
+    const cdmx = s.weather.cdmx;
+    if (cdmx) {
+      const tempEl = document.getElementById('w-cdmx-temp');
+      const descEl = document.getElementById('w-cdmx-desc');
+      if (tempEl && tempEl.textContent === '--') tempEl.textContent = cdmx.temp + '°C';
+      if (descEl && descEl.textContent === 'Loading...') descEl.textContent = (cdmx.icon || '') + ' ' + cdmx.condition + ' · ' + cdmx.humidity + '% hum';
+    }
+    const aca = s.weather.acapulco;
+    if (aca) {
+      const tempEl = document.getElementById('w-acapulco-temp');
+      const descEl = document.getElementById('w-acapulco-desc');
+      if (tempEl && tempEl.textContent === '--') tempEl.textContent = aca.temp + '°C';
+      if (descEl && descEl.textContent === 'Loading...') descEl.textContent = (aca.icon || '') + ' ' + aca.condition + ' · ' + aca.humidity + '% hum';
+    }
+  }
+
+  // ====== SYSTEM HEALTH PANEL ======
+  const stateAge = lastFetchTime ? Math.round((Date.now() - lastFetchTime) / 1000) : null;
+  const stateEl = document.getElementById('hs-state');
+  const stateDot = document.getElementById('hd-state');
+  if (stateEl) {
+    if (stateAge !== null) {
+      stateEl.textContent = stateAge + 's ago';
+      stateEl.style.color = stateAge > 90 ? 'var(--red)' : 'var(--green)';
+      if (stateDot) stateDot.className = 'health-dot ' + (stateAge > 90 ? 'h-err' : 'h-ok');
+    }
+  }
+  if (s.openclawStatus) {
+    const oc = s.openclawStatus;
+    const ocEl = document.getElementById('hs-openclaw');
+    const ocDot = document.getElementById('hd-openclaw');
+    const ocDetail = document.getElementById('hs-oc-detail');
+    if (ocEl) {
+      ocEl.textContent = oc.status === 'ok' ? 'NOMINAL' : oc.status === 'warn' ? 'WARN' : 'ERROR';
+      ocEl.style.color = oc.status === 'ok' ? 'var(--green)' : oc.status === 'warn' ? 'var(--yellow)' : 'var(--red)';
+    }
+    if (ocDot) ocDot.className = 'health-dot ' + (oc.status === 'ok' ? 'h-ok' : oc.status === 'warn' ? 'h-warn' : 'h-err');
+    if (ocDetail && oc.raw) ocDetail.textContent = oc.raw.slice(0, 200);
+  }
+  if (crons && crons.length) {
+    const errCrons = crons.filter(c => c.lastStatus === 'error' || c.consecutiveErrors > 0);
+    const ceEl = document.getElementById('hs-cron-errors');
+    if (ceEl) {
+      if (errCrons.length === 0) {
+        ceEl.innerHTML = '<span class="green">✓ All crons healthy</span>';
+      } else {
+        ceEl.innerHTML = errCrons.map(c =>
+          '<div class="red">⚠ ' + c.name + ' (' + (c.consecutiveErrors || 1) + ' errors)</div>'
+        ).join('');
+      }
+    }
+  }
+
+  // ====== INIT BRIEFING (once, after first state load) ======
+  if (window.initBriefing && !window._briefingInitialized) {
+    window._briefingInitialized = true;
+    window.STATE = s;
+    initBriefing(s);
+  } else {
+    window.STATE = s;
+  }
+
   // Activity Log — build from cron data
   const events = crons
     .filter(c => c.lastStatus && c.lastStatus !== '')
@@ -1203,5 +1511,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 500);
 </script>
+<script src="briefing.js"></script>
 </body>
 </html>
