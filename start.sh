@@ -22,6 +22,15 @@ cd "$SCRIPT_DIR"
 echo "  Generating initial state.json..."
 python3 update-state.py 2>&1 | head -5
 
-# Start the Node server
+# Start the Node server in background, open Chrome, then tail logs
 echo "  Starting server on :${PORT}..."
-exec node server.js
+node server.js &
+SERVER_PID=$!
+sleep 1
+echo "  ✓ Server PID: $SERVER_PID"
+echo "  Opening dashboard in Chrome..."
+open -a "Google Chrome" "http://localhost:${PORT}"
+echo ""
+echo "  DASHBOARD: http://localhost:${PORT}"
+echo "  Press Ctrl+C to stop."
+wait $SERVER_PID

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JEFFREY OS v6.1 // COMMAND CENTER</title>
+<title>JEFFREY OS v7.0 // COMMAND CENTER</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
@@ -512,7 +512,7 @@ body {
 
   <!-- Header -->
   <div class="header">
-    <h1>JEFFREY OS v6.1</h1>
+    <h1>JEFFREY OS v7.0</h1>
     <div class="subtitle">AI BUTLER COMMAND CENTER // BUENOS DIAS, JULIO</div>
     <div class="clock" id="main-clock">--:--:--</div>
   </div>
@@ -573,15 +573,15 @@ body {
       <div class="panel-body" id="airbnb-body">
         <div id="ab-alert"></div>
         <div class="price-grid">
-          <div class="price-card"><div class="price green" id="ab-price-ss1">$3,200</div><div class="label">SEMANA SANTA<br>Mar 29 - Apr 5</div></div>
-          <div class="price-card"><div class="price cyan" id="ab-price-ss2">$3,500</div><div class="label">WEEK 2<br>Apr 6 - Apr 12</div></div>
-          <div class="price-card"><div class="price" id="ab-price-reg">$2,500</div><div class="label">REGULAR<br>Per Night</div></div>
+          <div class="price-card"><div class="price green" id="ab-price-ss1">$3,800</div><div class="label">TEMPORADA ALTA<br>Jul - Aug 2026</div></div>
+          <div class="price-card"><div class="price cyan" id="ab-price-ss2">$3,200</div><div class="label">PUENTES<br>May - Jun 2026</div></div>
+          <div class="price-card"><div class="price" id="ab-price-reg">$2,500</div><div class="label">REGULAR<br>Por Noche</div></div>
         </div>
         <div class="kv"><span class="k">Bookings</span><span id="ab-bookings" class="yellow">0 reservas</span></div>
         <div class="kv"><span class="k">Currency</span><span>MXN</span></div>
         <div id="ab-warning"></div>
         <div class="countdown" id="ss-countdown">
-          <div class="label">SEMANA SANTA COUNTDOWN</div>
+          <div class="label" id="ss-countdown-label">PRÓXIMA TEMPORADA ALTA</div>
           <div id="ss-days">--</div>
         </div>
         <div class="section-title">CRONS</div>
@@ -707,8 +707,9 @@ body {
         <div class="kv"><span class="k">Dashboard</span><span class="green">ONLINE :8080</span></div>
         <div class="kv"><span class="k">Gateway</span><span class="green">ACTIVE</span></div>
         <div class="kv"><span class="k">WhatsApp</span><span class="green">CONNECTED</span></div>
-        <div class="kv"><span class="k">State Refresh</span><span>Every 15s</span></div>
-        <div class="kv"><span class="k">Cron Refresh</span><span>Every 30s</span></div>
+        <div class="kv"><span class="k">State Refresh</span><span class="green">Every 15s ● LIVE</span></div>
+        <div class="kv"><span class="k">Cron Refresh</span><span class="green">Every 15s ● LIVE</span></div>
+        <div class="kv"><span class="k">Log Refresh</span><span class="green">Every 5s ● LIVE</span></div>
       </div>
     </div>
 
@@ -797,13 +798,23 @@ body {
           <div class="section-title">OPENCLAW STATUS</div>
           <div id="hs-oc-detail" style="font-size:10px; opacity:0.5; max-height:60px; overflow:auto;">--</div>
         </div>
+        <div style="margin-top:8px;">
+          <div class="section-title">ANTHROPIC API</div>
+          <div id="hs-api-billing" style="font-size:10px; line-height:1.5;">
+            <div class="warning-box" style="font-size:10px; padding:6px 10px; margin:4px 0;">
+              ⚠ <strong>BILLING ISSUE</strong> — openclaw no puede usar <span style="color:var(--purple);">claude-opus-4-6</span> vía API directa.<br>
+              Fallback activo: <span style="color:var(--cyan);">ollama/qwen3:32b</span><br>
+              <span style="opacity:0.6;">Claude Max (Code) ✓ OK — API credits needed</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
   </div><!-- /grid -->
 
   <div style="text-align:center; padding:16px; font-size:10px; opacity:0.2;">
-    JEFFREY OS v6.2 // Built by Jeffrey for Julio // Mac mini M4 // <span id="footer-time"></span>
+    JEFFREY OS v7.0 // Built by Jeffrey for Julio // Mac mini M4 // <span id="footer-time"></span>
   </div>
 </div>
 
@@ -847,47 +858,22 @@ let lastCronFetchTime = 0;
 // ====== BOOT SEQUENCE ======
 (function() {
   const bootLines = [
-    '> JEFFREY OS v6.1 INITIALIZING...',
-    '> KERNEL: Darwin arm64 M4',
+    '> JEFFREY OS v7.0 INITIALIZING...',
+    '> KERNEL: Darwin arm64 M4 Pro',
     '> LOADING AI BUTLER MODULES...',
-    '> AIRBNB COMMAND CENTER............ OK',
-    '> OSS PIPELINE..................... OK',
-    '> LINKEDIN ENGINE.................. OK',
-    '> BRIGHTSPACE ACADEMIC............. OK',
-    '> CRON SCHEDULER (17 jobs)........ OK',
-    '> LIVE API ENDPOINTS............... CONNECTED',
-    '> MODEL STRATEGY................... SONNET/OPUS',
-    '> STATE.JSON FEED.................. CONNECTED',
-    '> WEATHER API...................... CONNECTED',
-    '',
     '> ALL SYSTEMS NOMINAL',
     '> WELCOME, JULIO.',
-    ''
   ];
   const el = document.getElementById('boot-text');
-  let lineIdx = 0, charIdx = 0, text = '';
-  function type() {
-    if (lineIdx >= bootLines.length) {
-      setTimeout(() => {
-        document.getElementById('boot-screen').classList.add('fade-out');
-        document.getElementById('app').classList.add('visible');
-        setTimeout(() => document.getElementById('boot-screen').remove(), 800);
-      }, 400);
-      return;
-    }
-    const line = bootLines[lineIdx];
-    if (charIdx <= line.length) {
-      el.innerHTML = text + line.substring(0, charIdx) + '<span class="cursor"></span>';
-      charIdx++;
-      setTimeout(type, line.startsWith('>') ? 12 : 5);
-    } else {
-      text += line + '\n';
-      lineIdx++;
-      charIdx = 0;
-      setTimeout(type, 60);
-    }
-  }
-  type();
+  el.innerHTML = bootLines.join('\n') + '<span class="cursor"></span>';
+  setTimeout(() => {
+    document.getElementById('boot-screen').classList.add('fade-out');
+    document.getElementById('app').classList.add('visible');
+    setTimeout(() => {
+      const bs = document.getElementById('boot-screen');
+      if (bs) bs.remove();
+    }, 400);
+  }, 600);
 })();
 
 // ====== CLOCK ======
@@ -1085,34 +1071,47 @@ function render() {
     document.getElementById('sys-arch').textContent = s.infrastructure ? s.infrastructure.arch : '--';
   }
 
-  // Airbnb — hardcoded prices since state.json may not have them
-  const ssStart = new Date('2026-03-29T00:00:00-06:00');
+  // Airbnb — upcoming seasons (Semana Santa April 2026 is over, next: Temporada Alta)
   const now = new Date();
-  const diffMs = ssStart - now;
   const bookings = (s.airbnb && s.airbnb.bookings != null) ? s.airbnb.bookings : 0;
 
-  document.getElementById('ab-price-ss1').textContent = '$3,200';
-  document.getElementById('ab-price-ss2').textContent = '$3,500';
+  // Upcoming seasons ordered by date
+  const seasons = [
+    { name: 'DÍA DEL TRABAJO', start: new Date('2026-05-01T00:00:00-06:00'), end: new Date('2026-05-03T00:00:00-06:00') },
+    { name: 'DÍA DE LA MADRE', start: new Date('2026-05-10T00:00:00-06:00'), end: new Date('2026-05-11T00:00:00-06:00') },
+    { name: 'TEMPORADA ALTA VERANO', start: new Date('2026-07-01T00:00:00-06:00'), end: new Date('2026-08-31T00:00:00-06:00') },
+    { name: 'FIESTAS PATRIAS', start: new Date('2026-09-15T00:00:00-06:00'), end: new Date('2026-09-17T00:00:00-06:00') },
+    { name: 'DÍA DE MUERTOS', start: new Date('2026-11-01T00:00:00-06:00'), end: new Date('2026-11-03T00:00:00-06:00') },
+    { name: 'NAVIDAD & AÑO NUEVO', start: new Date('2026-12-24T00:00:00-06:00'), end: new Date('2027-01-02T00:00:00-06:00') },
+  ];
+  const nextSeason = seasons.find(s => s.start > now) || seasons[seasons.length - 1];
+  const diffMs = nextSeason.start - now;
+
+  document.getElementById('ab-price-ss1').textContent = '$3,800';
+  document.getElementById('ab-price-ss2').textContent = '$3,200';
   document.getElementById('ab-price-reg').textContent = '$2,500';
   document.getElementById('ab-bookings').textContent = bookings + ' reservas';
 
-  // Red alert for 0 bookings during Semana Santa
+  // Alert logic for next upcoming season
   if (bookings === 0 && diffMs > 0 && diffMs < 7 * 86400000) {
-    document.getElementById('ab-alert').innerHTML = '<div class="alert-box">🚨 RED ALERT — 0 reservas for Semana Santa! Mar 29 approaching with NO bookings!</div>';
+    document.getElementById('ab-alert').innerHTML = '<div class="alert-box">🚨 RED ALERT — 0 reservas para ' + nextSeason.name + '! ¡Falta menos de 1 semana!</div>';
     document.getElementById('ab-warning').innerHTML = '';
   } else if (bookings === 0 && diffMs > 0) {
     document.getElementById('ab-alert').innerHTML = '';
-    document.getElementById('ab-warning').innerHTML = '<div class="warning-box">⚠ 0 RESERVAS ACTIVAS — Semana Santa approaching with no bookings!</div>';
+    document.getElementById('ab-warning').innerHTML = '<div class="warning-box">⚠ 0 RESERVAS — ' + nextSeason.name + ' sin bookings</div>';
   } else {
     document.getElementById('ab-alert').innerHTML = '';
     document.getElementById('ab-warning').innerHTML = '';
   }
 
-  // Countdown
+  // Countdown to next season
+  const labelEl = document.getElementById('ss-countdown-label');
+  if (labelEl) labelEl.textContent = nextSeason.name;
   if (diffMs > 0) {
     const days = Math.floor(diffMs / 86400000);
     const hrs = Math.floor((diffMs % 86400000) / 3600000);
     document.getElementById('ss-days').textContent = days + 'd ' + hrs + 'h';
+    document.getElementById('ss-days').style.color = '';
   } else {
     document.getElementById('ss-days').textContent = '🎉 EN CURSO';
     document.getElementById('ss-days').style.color = 'var(--green)';
@@ -1502,11 +1501,11 @@ fetchOSSQueue();
 fetchWeather();
 fetchLog();
 
-setInterval(fetchState, 60000);       // state every 60s
-setInterval(fetchCrons, 30000);       // crons every 30s
-setInterval(fetchOSSQueue, 300000);   // OSS queue every 5min
-setInterval(fetchWeather, 600000);    // weather every 10min
-setInterval(fetchLog, 10000);         // terminal log every 10s
+setInterval(fetchState, 15000);       // state every 15s — real-time
+setInterval(fetchCrons, 15000);       // crons every 15s — real-time
+setInterval(fetchOSSQueue, 120000);   // OSS queue every 2min
+setInterval(fetchWeather, 300000);    // weather every 5min
+setInterval(fetchLog, 5000);          // terminal log every 5s — real-time
 
 // Init Lucide icons after DOM ready
 document.addEventListener('DOMContentLoaded', () => {

@@ -261,7 +261,7 @@ state = {
     "openclawStatus": f_oc_status.result(),
     "infrastructure": {
         "host": "Mac mini M4",
-        "ip": "192.168.1.66",
+        "ip": run("ipconfig getifaddr en0") or run("ipconfig getifaddr en1") or "unknown",
         "os": f"macOS {platform.mac_ver()[0]}",
         "arch": platform.machine(),
         "dashboardPort": 8080,

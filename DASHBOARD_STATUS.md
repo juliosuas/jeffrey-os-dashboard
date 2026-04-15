@@ -55,14 +55,14 @@
 
 1. **Voice auto-play**: Browsers require a user gesture before TTS — briefing plays on first click, not literally on page load
 2. **GitHub PRs**: If `gh` CLI has no auth or juliosuas has no open PRs, returns empty list (gracefully shows "No open PRs — all clear")
-3. **Server restart**: `start.sh` needs to be run manually after reboot — no launchd/pm2 setup yet
+3. **Server restart**: ✅ RESUELTO — `install-autostart.sh` instala launchd plist que arranca en cada login
 4. **Mobile landscape**: Basic responsive CSS from col-12 fallback — works but not optimized
 
 ---
 
 ## 🚀 Next Steps
 
-1. **Auto-restart on reboot**: Add launchd plist or use PM2 to keep `node server.js` alive after macOS restart
+1. **Auto-restart on reboot**: ✅ DONE — `install-autostart.sh` crea launchd plist + abre Chrome automáticamente
 2. **Real Airbnb integration**: Connect to Airbnb API or calendar scrape for actual booking data
 3. **WhatsApp/iMessage health**: Check via OpenClaw API endpoint for real plugin status
 4. **PR detail view**: Click PR to open GitHub URL directly from dashboard
